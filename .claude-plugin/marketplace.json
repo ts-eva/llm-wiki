@@ -1,0 +1,14 @@
+{
+  "name": "wiki-notes-marketplace",
+  "owner": { "name": "Truckstop DevTools" },
+  "plugins": [
+    {
+      "name": "wiki-notes",
+      "source": {
+        "source": "url",
+        "url": "git@gitlab.com:truckstopcom/agentic-development/wiki-notes.git"
+      },
+      "description": "Personal knowledge wiki managed by Claude. Markdown, git-backed, MCP-accessible from any project."
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "wiki-notes",
+  "version": "1.0.0",
+  "description": "Personal knowledge wiki managed by Claude. Markdown, git-backed, MCP-accessible from any project.",
+  "author": { "name": "Truckstop DevTools" }
+}
