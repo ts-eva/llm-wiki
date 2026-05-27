@@ -127,6 +127,10 @@ Rules:
 
 ## Maintaining wiki/backlinks.md
 
+**Only maintained in `standard` mode.** Check `config.yaml` → `wiki.link_format`:
+- `standard`: maintain `backlinks.md` as described below — Claude owns this
+- `obsidian`: skip entirely — Obsidian tracks backlinks natively via `[[wikilinks]]`
+
 Inverse index: source file → wiki pages that reference it. Update whenever a page's `sources` frontmatter changes.
 
 ```markdown

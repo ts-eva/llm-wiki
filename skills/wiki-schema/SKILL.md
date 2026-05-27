@@ -42,6 +42,25 @@ sources: []
 - `updated`: ISO date when page was last modified
 - `sources`: relative paths to files in `sources/` that this page draws from (e.g. `sources/paper.pdf`)
 
+## Link format
+
+Read `config.yaml` before writing any links. The `wiki.link_format` field controls which format to use:
+
+**`standard`** (default) — regular Markdown links. Renders everywhere: GitLab, GitHub, VS Code, Warp, any IDE.
+```markdown
+[Event Sourcing](pages/event-sourcing.md)          ← linking to another wiki page
+[Meeting Notes](../sources/meeting-2026-05-27.md)  ← linking to a source file
+```
+
+**`obsidian`** — wikilinks. Enables Obsidian graph view and native backlinks. Does not render on GitLab/GitHub web UI.
+```markdown
+[[event-sourcing]]                    ← linking to another wiki page
+[[event-sourcing|Event Sourcing]]     ← with display text
+```
+In Obsidian mode, omit the `## Sources` section — Obsidian tracks backlinks natively. Keep `sources` frontmatter field for MCP compatibility.
+
+Always check `config.yaml` first. Never mix formats within the same wiki.
+
 ## Page structure
 
 ```markdown
@@ -61,11 +80,9 @@ One-paragraph summary of the topic.
 ...
 
 ## Sources
-
+<!-- Standard mode only — omit in Obsidian mode -->
 - [Source Title](../sources/filename.ext)
 ```
-
-The `## Sources` section at the bottom mirrors the `sources` frontmatter field as human-readable links.
 
 ## config.yaml schema
 

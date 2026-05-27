@@ -17,9 +17,17 @@ Ask the user for each of the following, showing the default in brackets. Accept 
 2. **Wiki location** — default: `~/wiki` (expand ~ to absolute path)
 3. **Your name** — default: output of `git config --global user.name` (run this command to get it)
 4. **Focus / purpose** — default: `general personal and work notes` — explain: "This helps Claude decide what's worth adding"
-5. **Remote URL** — default: skip — explain: "A private GitHub or GitLab repo for backup/sync. Press Enter to skip."
-6. **Auto-push after commit?** — default: `N` (y/N)
-7. **Auto-pull at session start?** — default: `Y` (Y/n) — only asked if a remote URL was provided
+5. **Editor / browse mode** — ask: "How will you read and browse your wiki?"
+   - `1` Standard (any IDE, Warp, VS Code, GitLab web) — default
+   - `2` Obsidian vault (graph view, Dataview queries, native backlinks)
+   
+   Explain the difference:
+   - Standard uses regular Markdown links `[Title](pages/slug.md)` — renders everywhere, works in any editor or terminal
+   - Obsidian uses `[[wikilinks]]` — enables graph view and native backlinks, but links won't render on GitLab/GitHub web UI
+   
+6. **Remote URL** — default: skip — explain: "A private GitHub or GitLab repo for backup/sync. Press Enter to skip."
+7. **Auto-push after commit?** — default: `N` (y/N)
+8. **Auto-pull at session start?** — default: `Y` (Y/n) — only asked if a remote URL was provided
 
 Store all answers. Expand `~/wiki` or any `~` path to its absolute form using the HOME environment variable.
 
@@ -62,6 +70,9 @@ git:
   auto_commit: true
   auto_push: <AUTO_PUSH>
   auto_pull: <AUTO_PULL>
+
+wiki:
+  link_format: <LINK_FORMAT>    # standard | obsidian
 
 mcp:
   path: "<WIKI_PATH_ABSOLUTE>"
@@ -219,6 +230,45 @@ Empty file.
 ### `<wiki-path>/wiki/pages/.gitkeep`
 
 Empty file.
+
+---
+
+### If LINK_FORMAT is `obsidian` — scaffold `.obsidian/` folder
+
+Create `<wiki-path>/wiki/.obsidian/app.json`:
+
+```json
+{
+  "newLinkFormat": "shortest",
+  "useMarkdownLinks": false,
+  "attachmentFolderPath": "../../sources"
+}
+```
+
+Create `<wiki-path>/wiki/.obsidian/community-plugins.json`:
+
+```json
+["dataview"]
+```
+
+Create `<wiki-path>/wiki/.obsidian/plugins/dataview/data.json`:
+
+```json
+{
+  "renderNullAs": "-",
+  "taskCompletionTracking": false,
+  "recursiveSubTaskCompletion": false,
+  "warnOnEmptyResult": true,
+  "enableInlineDataview": true,
+  "dataviewJsTimeout": 10000
+}
+```
+
+Tell the user:
+"Obsidian vault scaffolded at <wiki-path>/wiki/. Open that folder in Obsidian as your vault. Install the Dataview community plugin for query support. Links will use [[wikilinks]] format."
+
+Also tell the user:
+"Note: [[wikilinks]] won't render on GitLab/GitHub web UI — they still work as links but show as plain text in the browser. All content remains fully readable in any editor."
 
 ---
 

@@ -211,15 +211,36 @@ function addNote({ slug, markdown }) {
 }
 
 function getBacklinks({ source_file }) {
-  const raw = readWikiFile("backlinks.md");
-  const lines = raw.split("\n");
   const results = [];
-  let inSection = false;
 
-  for (const line of lines) {
-    if (line.startsWith(`## ${source_file}`)) { inSection = true; continue; }
-    if (inSection && line.startsWith("## ")) break;
-    if (inSection && line.startsWith("- ")) results.push(line.slice(2).trim());
+  // Strategy 1: check backlinks.md (standard mode)
+  const backlinksRaw = readWikiFile("backlinks.md");
+  if (backlinksRaw) {
+    const lines = backlinksRaw.split("\n");
+    let inSection = false;
+    for (const line of lines) {
+      if (line.startsWith(`## ${source_file}`)) { inSection = true; continue; }
+      if (inSection && line.startsWith("## ")) break;
+      if (inSection && line.startsWith("- ")) results.push(line.slice(2).trim());
+    }
+  }
+
+  // Strategy 2: scan page frontmatter sources fields (works for both modes)
+  if (results.length === 0) {
+    const files = readMarkdownFiles(PAGES_DIR);
+    for (const { slug } of files) {
+      const page = readPage(slug);
+      if (!page) continue;
+      const sources = page.frontmatter.sources || [];
+      if (sources.some((s) => s === source_file || s.endsWith(path.basename(source_file)))) {
+        // Return link in whichever format the page uses
+        const hasWikilinks = page.content.includes("[[");
+        const link = hasWikilinks
+          ? `[[${slug}]]`
+          : `[${page.frontmatter.title || slug}](pages/${slug}.md)`;
+        results.push(link);
+      }
+    }
   }
 
   return { source_file, count: results.length, pages: results };
