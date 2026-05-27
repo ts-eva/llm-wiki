@@ -65,14 +65,13 @@ wiki:
   name: "<WIKI_NAME>"
   focus: "<FOCUS>"
   author: "<AUTHOR>"
+  link_format: <LINK_FORMAT>    # standard | obsidian
+  date_format: "MM/DD/YYYY"     # date display format — change to YYYY-MM-DD for ISO, DD/MM/YYYY for European
 
 git:
   auto_commit: true
   auto_push: <AUTO_PUSH>
   auto_pull: <AUTO_PULL>
-
-wiki:
-  link_format: <LINK_FORMAT>    # standard | obsidian
 
 mcp:
   path: "<WIKI_PATH_ABSOLUTE>"

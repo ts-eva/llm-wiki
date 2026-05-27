@@ -89,8 +89,24 @@ function gitCommit(message) {
   }
 }
 
+function readDateFormat() {
+  const configPath = path.join(WIKI_PATH, "config.yaml");
+  if (!fs.existsSync(configPath)) return "MM/DD/YYYY";
+  const raw = fs.readFileSync(configPath, "utf8");
+  return raw.match(/date_format:\s*["']?([^"'\n]+)["']?/)?.[1]?.trim() || "MM/DD/YYYY";
+}
+
 function today() {
-  return new Date().toISOString().split("T")[0];
+  return new Date().toISOString().split("T")[0]; // ISO always used for log.md headers
+}
+
+function todayFormatted() {
+  const d = new Date();
+  const fmt = readDateFormat();
+  const yyyy = d.getFullYear().toString();
+  const mm = (d.getMonth() + 1).toString().padStart(2, "0");
+  const dd = d.getDate().toString().padStart(2, "0");
+  return fmt.replace("YYYY", yyyy).replace("MM", mm).replace("DD", dd);
 }
 
 function excerpt(content, query, maxLen = 150) {

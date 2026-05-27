@@ -29,8 +29,8 @@ Every page must have this YAML frontmatter block at the top:
 title: "Human-readable title"
 type: concept
 tags: [tag1, tag2]
-created: YYYY-MM-DD
-updated: YYYY-MM-DD
+created: <formatted-date>
+updated: <formatted-date>
 sources: []
 ---
 ```
@@ -38,9 +38,11 @@ sources: []
 - `title`: Human-readable, title case
 - `type`: one of `entity`, `concept`, `summary`, `synthesis`
 - `tags`: array of tags from `wiki/tags.md` canonical list (kebab-case, lowercase)
-- `created`: ISO date when page was first created
-- `updated`: ISO date when page was last modified
+- `created`: date when page was first created — format from `wiki.date_format` in `config.yaml`
+- `updated`: date when page was last modified — format from `wiki.date_format` in `config.yaml`
 - `sources`: relative paths to files in `sources/` that this page draws from (e.g. `sources/paper.pdf`)
+
+**Date formatting**: read `wiki.date_format` from `config.yaml` before writing any date. Default is `MM/DD/YYYY` (e.g. `05/27/2026`). Tokens: `YYYY` = 4-digit year, `MM` = 2-digit month, `DD` = 2-digit day. Always use ISO `YYYY-MM-DD` for log.md headers — that format is structural and never changes.
 
 ## Link format
 
@@ -90,14 +92,16 @@ Located at the root of the wiki data repo. Claude reads this at session start.
 
 ```yaml
 wiki:
-  name: "My Wiki"           # display name used in index.md and commit messages
-  focus: "general notes"    # Claude uses this to decide relevance of new material
-  author: "Your Name"       # used in git commits and page frontmatter
+  name: "My Wiki"             # display name used in index.md and commit messages
+  focus: "general notes"      # Claude uses this to decide relevance of new material
+  author: "Your Name"         # used in git commits and page frontmatter
+  link_format: standard       # standard | obsidian
+  date_format: "MM/DD/YYYY"   # date display format — YYYY-MM-DD for ISO, DD/MM/YYYY for European
 
 git:
-  auto_commit: true         # commit before session ends
-  auto_push: false          # push after auto-commit (only if remote is set)
-  auto_pull: true           # pull at session start (only if remote is set)
+  auto_commit: true           # commit before session ends
+  auto_push: false            # push after auto-commit (only if remote is set)
+  auto_pull: true             # pull at session start (only if remote is set)
 
 mcp:
   path: "/absolute/path/to/wiki"   # set by /wiki-setup, do not edit manually
