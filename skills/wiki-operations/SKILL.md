@@ -5,6 +5,24 @@ description: Rules for maintaining wiki/index.md, wiki/log.md, wiki/tags.md, wik
 
 # Wiki Operations
 
+## Obsidian CLI (Obsidian mode only)
+
+When `config.yaml` has `wiki.link_format: obsidian` and Obsidian is running, prefer CLI commands over file reads. They are free — no file I/O, no Claude tokens for the operation.
+
+Check availability first: `obsidian version` — if it returns cleanly, CLI is usable. If not, fall back to file I/O silently.
+
+| Operation | Obsidian CLI command | Fallback |
+|---|---|---|
+| Search pages | `obsidian search:context "query"` | Scan index.md then pages |
+| List tags | `obsidian tags` | Read `wiki/tags.md` |
+| Get backlinks | `obsidian backlinks "sources/file.md"` | Read `wiki/backlinks.md` |
+| Append to log | `obsidian append "wiki/log.md" "entry"` | `fs.appendFileSync` |
+| Update frontmatter | `obsidian property:set "pages/slug.md" key value` | Read + rewrite file |
+| Find orphaned pages | `obsidian orphans` | Manual scan |
+| Find unlinked pages | `obsidian unresolved` | Manual scan |
+
+**Key constraint**: these commands require Obsidian to be open. Always have a file I/O fallback. Never fail hard when CLI is unavailable.
+
 ## Context lookup hierarchy
 
 Always follow this order — never skip ahead:
