@@ -356,7 +356,24 @@ If push fails (e.g. repo doesn't exist yet), tell the user to create the remote 
 
 ---
 
-## Phase 8: Confirm setup
+## Phase 8: Open Obsidian (Obsidian mode only)
+
+If LINK_FORMAT is `obsidian`, open the vault automatically:
+
+```bash
+open "obsidian://open?vault=$(basename '<wiki-path>/wiki')"
+```
+
+If that fails (vault not yet known to Obsidian), fall back to:
+```bash
+open -a Obsidian "<wiki-path>/wiki"
+```
+
+Tell the user: "Opening your wiki vault in Obsidian. If it prompts you to trust the vault, click 'Trust and Enable Plugins'."
+
+---
+
+## Phase 9: Confirm setup
 
 Print a summary:
 ```
@@ -364,15 +381,18 @@ Print a summary:
 ✓ Git initialized with first commit
 ✓ MCP server registered (or instructions provided)
 <if remote> ✓ Remote configured and pushed to <url>
+<if obsidian> ✓ Obsidian vault opened
 
-You're ready. How ingestion works:
+Workflow:
+  Collect notes anytime → drop files in sources/ (zero tokens)
+  Run /wiki-process when ready → Haiku tags, Sonnet organizes, all at once
+  Batching saves tokens: one pipeline run beats many individual /wiki-add calls
 
-  Drop files into sources/ → wiki-tagger (Haiku) tags them cheaply
-  Then wiki-curator (Sonnet) organizes tagged entries into wiki pages
-  Sonnet never re-reads raw files — works from Haiku's summaries
-
-Try:
-  /wiki-add    — add a note from any Claude session
-  /wiki-search — search your wiki
-  cd <wiki-path> && claude — open the wiki directly for bulk ingestion
+Commands:
+  /wiki-add      — add a single note from any Claude session
+  /wiki-process  — batch process everything new in sources/ at once
+  /wiki-search   — search your wiki
+  /wiki-open     — open your wiki in Obsidian (Obsidian mode only)
+  /wiki-commit   — manual git commit
+  /wiki-convert  — switch between standard and Obsidian format
 ```
