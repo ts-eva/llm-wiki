@@ -72,32 +72,53 @@ function excerpt(content, query, maxLen = 150) {
 
 // --- Tool handlers ---
 
+function parseIndexMd() {
+  const raw = readWikiFile("index.md");
+  const entries = [];
+  let currentType = null;
+  for (const line of raw.split("\n")) {
+    const typeMatch = line.match(/^## (.+)/);
+    if (typeMatch) { currentType = typeMatch[1].toLowerCase().replace(/s$/, ""); continue; }
+    const entryMatch = line.match(/^- \[(.+?)\]\(pages\/(.+?)\.md\)\s*[—–-]\s*(.+)/);
+    if (entryMatch) entries.push({ title: entryMatch[1], slug: entryMatch[2], summary: entryMatch[3].trim(), type: currentType });
+  }
+  return entries;
+}
+
 function searchWiki({ query, tags }) {
-  const files = readMarkdownFiles(PAGES_DIR);
+  const q = (query || "").toLowerCase();
   const results = [];
+  const seenSlugs = new Set();
 
-  for (const { slug } of files) {
-    const page = readPage(slug);
-    if (!page) continue;
+  // Pass 1: fast index scan (no file reads)
+  const indexEntries = parseIndexMd();
+  for (const entry of indexEntries) {
+    const titleMatch = entry.title.toLowerCase().includes(q);
+    const summaryMatch = entry.summary.toLowerCase().includes(q);
+    if (titleMatch || summaryMatch) {
+      // Check tag filter if needed
+      if (tags?.length) {
+        const page = readPage(entry.slug);
+        if (!page || !tags.some((t) => page.frontmatter.tags?.includes(t))) continue;
+      }
+      results.push({ slug: entry.slug, title: entry.title, type: entry.type, summary: entry.summary, matchedIn: "index" });
+      seenSlugs.add(entry.slug);
+    }
+  }
 
-    const { frontmatter, content } = page;
-    const titleMatch = frontmatter.title?.toLowerCase().includes(query?.toLowerCase());
-    const contentMatch = content.toLowerCase().includes(query?.toLowerCase());
-    const tagMatch =
-      tags?.length
-        ? tags.some((t) => frontmatter.tags?.includes(t))
-        : false;
-
-    const tagFilterPass = !tags?.length || tagMatch;
-
-    if ((titleMatch || contentMatch) && tagFilterPass) {
-      results.push({
-        slug,
-        title: frontmatter.title || slug,
-        type: frontmatter.type,
-        tags: frontmatter.tags || [],
-        excerpt: excerpt(content, query),
-      });
+  // Pass 2: full content scan only for non-index matches
+  if (!tags?.length || results.length === 0) {
+    const files = readMarkdownFiles(PAGES_DIR);
+    for (const { slug } of files) {
+      if (seenSlugs.has(slug)) continue;
+      const page = readPage(slug);
+      if (!page) continue;
+      const { frontmatter, content } = page;
+      const tagMatch = tags?.length ? tags.some((t) => frontmatter.tags?.includes(t)) : false;
+      const contentMatch = content.toLowerCase().includes(q);
+      if (contentMatch || tagMatch) {
+        results.push({ slug, title: frontmatter.title || slug, type: frontmatter.type, tags: frontmatter.tags || [], excerpt: excerpt(content, query), matchedIn: "content" });
+      }
     }
   }
 

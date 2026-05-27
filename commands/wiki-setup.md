@@ -188,6 +188,28 @@ All indexes are maintained by Claude. Do not edit manually.
 
 ---
 
+### `<wiki-path>/sources/index.md`
+
+```markdown
+# Sources Index
+
+<!-- Maintained by wiki-tagger (Haiku). One section per source file. -->
+<!-- Format:
+## sources/<filename>
+date: YYYY-MM-DD
+type: meeting-notes | article | document | code | conversation | other
+tags: []
+summary: One sentence.
+key-points:
+  - Point
+action-items: []
+notable-quotes: []
+wiki-pages: []
+-->
+```
+
+---
+
 ### `<wiki-path>/sources/.gitkeep`
 
 Empty file.
@@ -293,8 +315,14 @@ Print a summary:
 ✓ MCP server registered (or instructions provided)
 <if remote> ✓ Remote configured and pushed to <url>
 
-You're ready. Try:
-  /wiki-add    — add your first note from any Claude session
+You're ready. How ingestion works:
+
+  Drop files into sources/ → wiki-tagger (Haiku) tags them cheaply
+  Then wiki-curator (Sonnet) organizes tagged entries into wiki pages
+  Sonnet never re-reads raw files — works from Haiku's summaries
+
+Try:
+  /wiki-add    — add a note from any Claude session
   /wiki-search — search your wiki
-  cd <wiki-path> && claude — open the wiki directly
+  cd <wiki-path> && claude — open the wiki directly for bulk ingestion
 ```

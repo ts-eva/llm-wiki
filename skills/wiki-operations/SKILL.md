@@ -5,27 +5,69 @@ description: Rules for maintaining wiki/index.md, wiki/log.md, wiki/tags.md, wik
 
 # Wiki Operations
 
+## Context lookup hierarchy
+
+Always follow this order — never skip ahead:
+
+1. **`wiki/index.md`** — first stop, titles and one-line summaries, minimal tokens
+2. **`wiki/pages/<slug>.md`** — full organized page, read when the index points here
+3. **`sources/index.md`** — Haiku-processed entries with tags/key-points, read if no wiki page exists yet
+4. **`sources/<file>`** — raw input, **never read by default** — only if user explicitly asks for the original
+
+This hierarchy ensures Claude consumes the minimum tokens needed for accurate answers.
+
 ## Session start checklist
 
 Run these steps at the start of every session when inside the wiki repo:
 
 1. Read `config.yaml` to load user settings
 2. If `git.auto_pull` is true and a remote is configured: run `git pull`
-3. Run `git status` — any untracked files in `sources/` are pending ingestion
-4. If pending sources exist, tell the user and offer to ingest them before anything else
+3. Run `git status` — any untracked files in `sources/` signal new material
+4. If new files exist in `sources/`:
+   - Run wiki-tagger (Haiku) on each new file to update `sources/index.md`
+   - Then tell the user and offer to organize them into wiki pages via wiki-curator
 
-## Ingesting a source
+## Two-phase ingestion
 
-When ingesting content (from `sources/` or pasted by the user):
+**Phase 1 — Tagging (wiki-tagger, Haiku)**: runs automatically on new source files
+- Reads raw source once
+- Writes rich entry to `sources/index.md` (tags, key-points, action-items, quotes)
+- Commits `sources/index.md` and any new tags
 
-1. Determine the appropriate page type (entity, concept, summary, synthesis)
-2. Check `wiki/tags.md` for existing tags — reuse the closest match, do not invent new ones unless truly necessary
-3. Create `wiki/pages/<slug>.md` with correct frontmatter and `## Sources` section
-4. Update `wiki/index.md` — add the new entry
-5. Append to `wiki/log.md` — one line entry
-6. Update `wiki/tags.md` — add any genuinely new tags
-7. Update `wiki/backlinks.md` — add source → page mapping
-8. Commit: `git add . && git commit -m "wiki: add <title>"`
+**Phase 2 — Organization (wiki-curator, Sonnet)**: runs when user wants wiki pages
+- Reads `sources/index.md` entries where `wiki-pages: []`
+- Writes structured wiki pages from the Haiku-processed summaries
+- Never re-reads raw source files (Haiku captured what matters)
+- Updates all wiki indexes and commits
+
+## Ingesting pasted content (no source file)
+
+When a user pastes content directly (no file in sources/):
+1. Write the content to `sources/<slug>-<date>.md` first
+2. Run wiki-tagger on it
+3. Then proceed to Phase 2
+
+## Maintaining wiki/index.md
+
+One entry per page, grouped by type. Format:
+
+```markdown
+# [Wiki Name]
+
+## Entities
+- [Title](pages/filename.md) — one-line summary
+
+## Concepts
+- [Title](pages/filename.md) — one-line summary
+
+## Summaries
+- [Title](pages/filename.md) — one-line summary
+
+## Syntheses
+- [Title](pages/filename.md) — one-line summary
+```
+
+Always keep entries sorted alphabetically within each group.
 
 ## Maintaining wiki/index.md
 
