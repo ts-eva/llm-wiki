@@ -5,20 +5,9 @@ Scan your tag list for near-duplicates and consolidate them. Run occasionally wh
 1. Read `config.yaml` to get `mcp.path`
 2. Read `wiki/tags.md` — extract all canonical tags
 
-### Phase 1 — Detect near-duplicates (Haiku)
+### Phase 1 — Detect near-duplicates (wiki-analyst, Haiku)
 
-Ask Haiku to review the tag list and identify:
-- Abbreviations vs. full forms (`ml` / `machine-learning`, `db` / `database`)
-- Singular vs. plural (`tool` / `tools`)
-- Synonyms (`auth` / `authentication`)
-- Overly specific tags with only 1 page (candidates for merging into a broader tag)
-
-Return a proposed merge list:
-```
-- Keep `machine-learning`, remove `ml`
-- Keep `authentication`, remove `auth`
-- Keep `database`, remove `db`
-```
+Invoke the `wiki-notes:wiki-analyst` agent (Haiku) with the contents of `wiki/tags.md`. It will return a numbered list of proposed merges.
 
 ### Phase 2 — User confirms
 
@@ -26,7 +15,7 @@ Show the proposed merges. Ask: "Apply these consolidations? (y/N) Or type the nu
 
 If user says no or skips all: stop here.
 
-### Phase 3 — Rename across wiki (Claude)
+### Phase 3 — Rename across wiki (Sonnet)
 
 For each confirmed merge:
 1. Update all pages in `wiki/pages/` — replace old tag in frontmatter `tags:` array

@@ -17,10 +17,9 @@ If $ARGUMENTS is empty, default to `this week`.
 1. Read `config.yaml` to get `mcp.path`
 2. Parse `$ARGUMENTS` into a start date and end date (inclusive)
 3. Read `wiki/log.md` — filter lines matching `## [YYYY-MM-DD]` within the date range
-4. For each unique slug referenced, find its one-line summary in `wiki/index.md`
-5. Summarize:
-   - One short paragraph: overall narrative of what changed (e.g. "This week you added 3 new concepts around payments architecture and updated your notes on Postgres indexing.")
-   - Bullet list grouped by action: **Added**, **Updated**, each with title and one-line summary
-6. If no entries found in range: "Nothing was added or changed in that period."
-
-Model: Haiku — this is a near-free operation.
+4. If no entries found in range: "Nothing was added or changed in that period." Stop here.
+5. For each unique slug referenced, collect its one-line summary from `wiki/index.md`
+6. Invoke the `wiki-notes:wiki-analyst` agent (Haiku) with the filtered log entries and index summaries. Ask it to produce:
+   - One short paragraph: overall narrative of what changed
+   - Bullet list grouped by action: **Added**, **Updated**, each with title + one-line summary
+7. Print the analyst's output directly.
