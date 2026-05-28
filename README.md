@@ -7,14 +7,21 @@ Markdown, git-backed, accessible from any Claude Code session via MCP.
 ## Install
 
 ```
-/plugin marketplace add git@gitlab.com:truckstopcom/agentic-development/llm-wiki.git
+/plugin marketplace add https://github.com/ts-eva/llm-wiki.git
 /plugin install llm-wiki@llm-wiki-marketplace
 /wiki-setup
 ```
 
-**Requirement**: GitLab SSH key with access to the `truckstopcom` org.
+`/wiki-setup` runs an interactive wizard: creates your wiki repo (default `~/wiki`), asks for name/focus/remote, initializes git, and **automatically registers the MCP server** so wiki tools are available in every Claude Code session.
 
-`/wiki-setup` runs an interactive wizard: creates your wiki repo (default `~/wiki`), asks for name/focus/remote, initializes git, and registers the MCP server so wiki tools are available in every Claude Code session.
+**Manual MCP registration** (if you need to re-run or the wizard failed):
+```bash
+claude mcp add llm-wiki --env WIKI_PATH="<absolute-path-to-your-wiki>" -- node "<plugin-dir>/server/index.js"
+```
+Where `<plugin-dir>` is found via:
+```bash
+find "$HOME/.claude" -type d -name "llm-wiki" 2>/dev/null | head -1
+```
 
 ## Daily workflow
 
