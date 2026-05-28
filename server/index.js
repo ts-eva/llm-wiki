@@ -265,6 +265,33 @@ function getRecent({ days = 7 } = {}) {
   return { days, since: cutoffStr, count: entries.length, entries };
 }
 
+function saveSource({ content, title, source_url }) {
+  if (!content) return { error: "content is required" };
+
+  const slug = (title || content.split("\n")[0].slice(0, 40))
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const filename = `session-${slug}-${today()}.md`;
+  const filePath = path.join(WIKI_PATH, "sources", filename);
+
+  const fmt = readDateFormat();
+  const d = new Date();
+  const created = todayFormatted();
+
+  const frontmatter = ["---", `created: ${created}`, `type: conversation`];
+  if (title) frontmatter.push(`title: "${title}"`);
+  if (source_url) frontmatter.push(`source_url: "${source_url}"`);
+  frontmatter.push("---", "");
+
+  fs.mkdirSync(path.join(WIKI_PATH, "sources"), { recursive: true });
+  fs.writeFileSync(filePath, frontmatter.join("\n") + "\n" + content, "utf8");
+
+  try {
+    execSync(`git -C "${WIKI_PATH}" add sources/${filename} && git -C "${WIKI_PATH}" commit -m "wiki: add source ${slug}"`, { stdio: "pipe" });
+  } catch { /* git may not be configured in all environments */ }
+
+  return { saved: true, file: `sources/${filename}`, message: "Run /wiki-process when ready to tag and organize." };
+}
+
 function addNote({ slug, markdown }) {
   if (!slug || !markdown) return { error: "slug and markdown are required" };
 
@@ -439,6 +466,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
       },
     },
+    {
+      name: "save_source",
+      description: "Save content to sources/ for later processing via /wiki-process. Use this from any ambient session to capture notes without creating a wiki page immediately.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          content: { type: "string", description: "The content to save" },
+          title: { type: "string", description: "Optional title (used for filename slug)" },
+          source_url: { type: "string", description: "Optional URL the content came from" },
+        },
+        required: ["content"],
+      },
+    },
   ],
 }));
 
@@ -453,6 +493,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   else if (name === "add_note") result = addNote(args);
   else if (name === "get_backlinks") result = getBacklinks(args);
   else if (name === "get_recent") result = getRecent(args);
+  else if (name === "save_source") result = saveSource(args);
   else result = { error: `Unknown tool: ${name}` };
 
   return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
