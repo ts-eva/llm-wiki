@@ -1,4 +1,4 @@
-Run the wiki-notes first-time setup wizard. This creates the user's personal wiki repository and registers the MCP server.
+Run the llm-wiki first-time setup wizard. This creates the user's personal wiki repository and registers the MCP server.
 
 ---
 
@@ -7,7 +7,7 @@ Run the wiki-notes first-time setup wizard. This creates the user's personal wik
 Display this header:
 ```
 ╔══════════════════════════════════════╗
-║   wiki-notes setup                   ║
+║   llm-wiki setup                   ║
 ╚══════════════════════════════════════╝
 ```
 
@@ -92,9 +92,9 @@ This is your personal wiki. Claude maintains it — you feed context, Claude wri
 
 You are the wiki curator for this knowledge base. Read `config.yaml` to understand the wiki's focus and settings before doing anything else.
 
-Follow the skills loaded by the wiki-notes plugin:
-- `wiki-notes:wiki-schema` — page types, frontmatter, naming conventions
-- `wiki-notes:wiki-operations` — index maintenance, git operations, session checklist
+Follow the skills loaded by the llm-wiki plugin:
+- `llm-wiki:wiki-schema` — page types, frontmatter, naming conventions
+- `llm-wiki:wiki-operations` — index maintenance, git operations, session checklist
 
 ## Session start
 
@@ -174,7 +174,7 @@ Substitute: WIKI_NAME from user answer.
 ```markdown
 # Wiki Schema Reference
 
-This wiki uses the wiki-notes Claude Code plugin conventions.
+This wiki uses the llm-wiki Claude Code plugin conventions.
 
 ## Page types
 - **Entity** — a person, org, tool, or product (`postgres.md`)
@@ -319,26 +319,26 @@ git commit -m "wiki: init"
 
 ## Phase 6: Install and register MCP server
 
-1. Find the wiki-notes plugin directory by running:
+1. Find the llm-wiki plugin directory by running:
    ```
-   find "$HOME/.claude" -type d -name "wiki-notes" 2>/dev/null | head -1
+   find "$HOME/.claude" -type d -name "llm-wiki" 2>/dev/null | head -1
    ```
    If not found, also try:
    ```
-   find "$HOME/Library/Application Support/Claude" -type d -name "wiki-notes" 2>/dev/null | head -1
+   find "$HOME/Library/Application Support/Claude" -type d -name "llm-wiki" 2>/dev/null | head -1
    ```
 
 2. If a plugin directory is found and it contains `server/index.js`:
    - Run `npm install` inside `<plugin-dir>/server/`
    - Register the MCP server:
      ```
-     claude mcp add wiki-notes --env WIKI_PATH="<WIKI_PATH_ABSOLUTE>" -- node "<plugin-dir>/server/index.js"
+     claude mcp add llm-wiki --env WIKI_PATH="<WIKI_PATH_ABSOLUTE>" -- node "<plugin-dir>/server/index.js"
      ```
 
 3. If the plugin directory is not found, tell the user:
-   "Could not locate the wiki-notes plugin directory automatically. Please run:
-   `claude mcp add wiki-notes --env WIKI_PATH=<wiki-path> -- node <path-to-plugin>/server/index.js`
-   replacing <path-to-plugin> with the directory where the wiki-notes plugin is installed."
+   "Could not locate the llm-wiki plugin directory automatically. Please run:
+   `claude mcp add llm-wiki --env WIKI_PATH=<wiki-path> -- node <path-to-plugin>/server/index.js`
+   replacing <path-to-plugin> with the directory where the llm-wiki plugin is installed."
 
 ---
 

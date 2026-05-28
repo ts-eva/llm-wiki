@@ -1,7 +1,7 @@
 {
-  "name": "wiki-notes-server",
+  "name": "llm-wiki-server",
   "version": "1.0.0",
-  "description": "MCP server for wiki-notes plugin",
+  "description": "MCP server for llm-wiki plugin",
   "type": "module",
   "main": "index.js",
   "dependencies": {

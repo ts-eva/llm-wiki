@@ -9,7 +9,7 @@ Title/focus: $ARGUMENTS
 1. Read `config.yaml` to get `mcp.path` and `wiki.date_format`
 2. Derive a slug:
    - If $ARGUMENTS is provided, slugify it (e.g. "payments architecture discussion" → `payments-architecture-discussion`)
-   - Otherwise, infer a short topic from the session (e.g. `wiki-notes-plugin-dev`)
+   - Otherwise, infer a short topic from the session (e.g. `llm-wiki-plugin-dev`)
 3. Set filename: `sources/session-<slug>-<YYYY-MM-DD>.md`
 
 ## Summarize the session

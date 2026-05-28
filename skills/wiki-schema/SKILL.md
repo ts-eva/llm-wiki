@@ -1,6 +1,6 @@
 ---
 name: wiki-schema
-description: Page types, frontmatter specification, file naming conventions, and config.yaml schema for the wiki-notes system
+description: Page types, frontmatter specification, file naming conventions, and config.yaml schema for the llm-wiki system
 ---
 
 # Wiki Schema

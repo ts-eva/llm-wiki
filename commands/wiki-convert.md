@@ -29,7 +29,7 @@ If $ARGUMENTS is empty, ask the user:
 1. Read `config.yaml` to get the wiki path (`mcp.path`)
 2. Confirm the conversion direction with the user before proceeding
 3. Run: `node <plugin-path>/server/convert.js "<wiki-path>" <target-format>`
-   - Find the plugin path the same way as /wiki-setup (search ~/.claude for wiki-notes directory)
+   - Find the plugin path the same way as /wiki-setup (search ~/.claude for llm-wiki directory)
 4. Stage and commit: `git -C "<wiki-path>" add . && git -C "<wiki-path>" commit -m "wiki: convert to <target-format> format"`
 5. Report how many pages were converted and any next steps
 

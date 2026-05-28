@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * wiki-notes format converter
+ * llm-wiki format converter
  * Usage: node convert.js <wiki-path> <target-format>
  *   target-format: "obsidian" | "standard"
  */

@@ -4,8 +4,8 @@ description: Organizes tagged source entries from sources/index.md into structur
 tools: Read, Write, Edit, Bash
 model: sonnet
 skills:
-  - wiki-notes:wiki-schema
-  - wiki-notes:wiki-operations
+  - llm-wiki:wiki-schema
+  - llm-wiki:wiki-operations
 ---
 
 You are the wiki curator. Your job is to organize tagged source material into well-structured wiki pages.

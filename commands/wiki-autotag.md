@@ -7,7 +7,7 @@ Check sources/ for new untagged files and run wiki-tagger on them. Designed to b
 3. Read `sources/index.md` to get already-tagged filenames (sections `## sources/<filename>`)
 4. Compute untagged = files in sources/ not in sources/index.md
 5. If nothing untagged: exit silently (no output — cron-friendly)
-6. Invoke `wiki-notes:wiki-tagger` (Haiku) on all untagged files in one pass
+6. Invoke `llm-wiki:wiki-tagger` (Haiku) on all untagged files in one pass
 7. Commit: `git add sources/index.md wiki/tags.md && git commit -m "wiki: autotag <N> new source(s) [YYYY-MM-DD]"`
 8. Report: "Tagged N new file(s): filename1, filename2, ..."
 
@@ -20,6 +20,6 @@ To run this daily, add a cron in any Claude Code session:
 ```
 
 Or set it up manually via the Claude Code cron system with the prompt:
-`Read config.yaml at <wiki-path>, then run the wiki-notes:wiki-autotag command to tag any new files in sources/`
+`Read config.yaml at <wiki-path>, then run the llm-wiki:wiki-autotag command to tag any new files in sources/`
 
 The cron only runs wiki-tagger (Haiku, cheap). Organization into wiki pages still requires /wiki-process.

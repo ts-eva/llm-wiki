@@ -7,7 +7,7 @@ Scan your tag list for near-duplicates and consolidate them. Run occasionally wh
 
 ### Phase 1 — Detect near-duplicates (wiki-analyst, Haiku)
 
-Invoke the `wiki-notes:wiki-analyst` agent (Haiku) with the contents of `wiki/tags.md`. It will return a numbered list of proposed merges.
+Invoke the `llm-wiki:wiki-analyst` agent (Haiku) with the contents of `wiki/tags.md`. It will return a numbered list of proposed merges.
 
 ### Phase 2 — User confirms
 

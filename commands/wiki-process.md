@@ -23,7 +23,7 @@ Use this at the end of the day (or whenever you're ready) after dropping files i
 
 For each untagged file (in one wiki-tagger invocation — batch them all together for efficiency):
 
-Invoke the `wiki-notes:wiki-tagger` agent with all untagged files listed. The agent will:
+Invoke the `llm-wiki:wiki-tagger` agent with all untagged files listed. The agent will:
 - Read each raw source file once
 - Write a rich entry per file to `sources/index.md` (tags, key-points, action-items, notable-quotes)
 
@@ -33,7 +33,7 @@ After wiki-tagger completes:
 
 ### Phase 3 — Organize into wiki pages (wiki-curator, Sonnet)
 
-Invoke the `wiki-notes:wiki-curator` agent once with all entries that have `wiki-pages: []` in `sources/index.md`. The agent will:
+Invoke the `llm-wiki:wiki-curator` agent once with all entries that have `wiki-pages: []` in `sources/index.md`. The agent will:
 - Read `sources/index.md` entries (never raw source files)
 - Create or update wiki pages in `wiki/pages/`
 - Update `wiki/index.md`, `wiki/log.md`, `wiki/tags.md`

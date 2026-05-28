@@ -1,4 +1,4 @@
-# wiki-notes
+# llm-wiki
 
 Personal knowledge wiki managed by Claude. You feed context; Claude writes.
 
@@ -7,8 +7,8 @@ Markdown, git-backed, accessible from any Claude Code session via MCP.
 ## Install
 
 ```
-/plugin marketplace add git@gitlab.com:truckstopcom/agentic-development/wiki-notes.git
-/plugin install wiki-notes@wiki-notes-marketplace
+/plugin marketplace add git@gitlab.com:truckstopcom/agentic-development/llm-wiki.git
+/plugin install llm-wiki@llm-wiki-marketplace
 /wiki-setup
 ```
 

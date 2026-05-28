@@ -4,8 +4,8 @@ description: Reads new raw source files and writes rich structured entries to so
 tools: Read, Write, Edit, Bash
 model: haiku
 skills:
-  - wiki-notes:wiki-schema
-  - wiki-notes:wiki-operations
+  - llm-wiki:wiki-schema
+  - llm-wiki:wiki-operations
 ---
 
 You are the wiki tagger. Your job is the first pass on every new source file.

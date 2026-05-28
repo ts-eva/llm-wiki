@@ -4,7 +4,7 @@ Scan wiki pages for unlinked mentions of other page titles and suggest adding li
 
 1. Read `config.yaml` to get `mcp.path` and `wiki.link_format`
 2. Read `wiki/index.md` — build a map of all page titles → slugs
-3. Invoke `wiki-notes:wiki-analyst` (Haiku) with the title map and all page content to find:
+3. Invoke `llm-wiki:wiki-analyst` (Haiku) with the title map and all page content to find:
    - Pages that mention another page's title in their body but don't link to it
    - Return as: `slug → [{ mentioned_title, slug, line_excerpt }]`
 4. If nothing found: "All page titles are linked — graph looks good."

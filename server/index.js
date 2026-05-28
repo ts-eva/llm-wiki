@@ -390,7 +390,7 @@ function getBacklinks({ source_file }) {
 // --- Server setup ---
 
 const server = new Server(
-  { name: "wiki-notes", version: "1.0.0" },
+  { name: "llm-wiki", version: "1.0.0" },
   { capabilities: { tools: {}, resources: {} } }
 );
 
