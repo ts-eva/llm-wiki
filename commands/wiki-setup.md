@@ -14,7 +14,7 @@ Display this header:
 Ask the user for each of the following, showing the default in brackets. Accept Enter to use the default.
 
 1. **Wiki name** — default: `My Wiki`
-2. **Wiki location** — default: `~/wiki` (expand ~ to absolute path)
+2. **Wiki location** — default: `~/<wiki-name-slug>` where the slug is the wiki name lowercased with spaces replaced by hyphens (e.g. name "tsm" → `~/tsm`, name "My Wiki" → `~/my-wiki`). Expand ~ to absolute path.
 3. **Your name** — default: output of `git config --global user.name` (run this command to get it)
 4. **Focus / purpose** — default: `general personal and work notes` — explain: "This helps Claude decide what's worth adding"
 5. **Editor / browse mode** — ask: "How will you read and browse your wiki?"
