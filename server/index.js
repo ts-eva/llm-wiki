@@ -132,7 +132,7 @@ function parseIndexMd() {
   return entries;
 }
 
-function searchWiki({ query, tags }) {
+function searchWiki({ query, tags, include_sensitive = false }) {
   const q = (query || "").toLowerCase();
 
   // Obsidian CLI path — no file reads needed
@@ -147,10 +147,10 @@ function searchWiki({ query, tags }) {
         if (!fileMatch) continue;
         const slug = fileMatch[1];
         const matchExcerpt = lines.slice(1).map((l) => l.trim()).join(" ").slice(0, 150);
-        if (tags?.length) {
-          const page = readPage(slug);
-          if (!page || !tags.some((t) => page.frontmatter.tags?.includes(t))) continue;
-        }
+        const page = readPage(slug);
+        if (!page) continue;
+        if (!include_sensitive && page.frontmatter.sensitive === true) continue;
+        if (tags?.length && !tags.some((t) => page.frontmatter.tags?.includes(t))) continue;
         results.push({ slug, excerpt: matchExcerpt, matchedIn: "obsidian-search" });
       }
       if (results.length) return { found: true, count: results.length, results, via: "obsidian-cli" };
@@ -166,10 +166,10 @@ function searchWiki({ query, tags }) {
     const titleMatch = entry.title.toLowerCase().includes(q);
     const summaryMatch = entry.summary.toLowerCase().includes(q);
     if (titleMatch || summaryMatch) {
-      if (tags?.length) {
-        const page = readPage(entry.slug);
-        if (!page || !tags.some((t) => page.frontmatter.tags?.includes(t))) continue;
-      }
+      const page = readPage(entry.slug);
+      if (!page) continue;
+      if (!include_sensitive && page.frontmatter.sensitive === true) continue;
+      if (tags?.length && !tags.some((t) => page.frontmatter.tags?.includes(t))) continue;
       results.push({ slug: entry.slug, title: entry.title, type: entry.type, summary: entry.summary, matchedIn: "index" });
       seenSlugs.add(entry.slug);
     }
@@ -182,6 +182,7 @@ function searchWiki({ query, tags }) {
       const page = readPage(slug);
       if (!page) continue;
       const { frontmatter, content } = page;
+      if (!include_sensitive && frontmatter.sensitive === true) continue;
       const tagMatch = tags?.length ? tags.some((t) => frontmatter.tags?.includes(t)) : false;
       const contentMatch = content.toLowerCase().includes(q);
       if (contentMatch || tagMatch) {
@@ -200,7 +201,7 @@ function getPage({ slug }) {
   return { slug, ...page.frontmatter, content: page.content };
 }
 
-function listPages({ type, tag }) {
+function listPages({ type, tag, include_sensitive = false }) {
   const files = readMarkdownFiles(PAGES_DIR);
   const results = [];
 
@@ -208,6 +209,7 @@ function listPages({ type, tag }) {
     const page = readPage(slug);
     if (!page) continue;
     const { frontmatter } = page;
+    if (!include_sensitive && frontmatter.sensitive === true) continue;
     if (type && frontmatter.type !== type) continue;
     if (tag && !frontmatter.tags?.includes(tag)) continue;
     results.push({
@@ -244,6 +246,23 @@ function listTags() {
     if (match) tags.push({ tag: match[1], description: match[2].trim() });
   }
   return { count: tags.length, tags, via: "file-io" };
+}
+
+function getRecent({ days = 7 } = {}) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().split("T")[0];
+
+  const raw = readWikiFile("log.md");
+  const entries = [];
+  for (const line of raw.split("\n")) {
+    const match = line.match(/^## \[(\d{4}-\d{2}-\d{2})\] (\w+) \| (.+)$/);
+    if (!match) continue;
+    const [, date, action, title] = match;
+    if (date >= cutoffStr) entries.push({ date, action, title });
+  }
+  entries.sort((a, b) => b.date.localeCompare(a.date));
+  return { days, since: cutoffStr, count: entries.length, entries };
 }
 
 function addNote({ slug, markdown }) {
@@ -352,12 +371,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: "search_wiki",
-      description: "Search wiki pages by text and/or tags",
+      description: "Search wiki pages by text and/or tags. Sensitive pages are excluded by default.",
       inputSchema: {
         type: "object",
         properties: {
           query: { type: "string", description: "Text to search for" },
           tags: { type: "array", items: { type: "string" }, description: "Filter by tags" },
+          include_sensitive: { type: "boolean", description: "Include pages marked sensitive: true (default false)" },
         },
         required: ["query"],
       },
@@ -373,12 +393,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "list_pages",
-      description: "List all wiki pages, optionally filtered by type or tag",
+      description: "List all wiki pages, optionally filtered by type or tag. Sensitive pages are excluded by default.",
       inputSchema: {
         type: "object",
         properties: {
           type: { type: "string", enum: ["entity", "concept", "summary", "synthesis"] },
           tag: { type: "string" },
+          include_sensitive: { type: "boolean", description: "Include pages marked sensitive: true (default false)" },
         },
       },
     },
@@ -408,6 +429,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["source_file"],
       },
     },
+    {
+      name: "get_recent",
+      description: "Return wiki changes from the last N days (default 7). Reads log.md — free operation.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          days: { type: "number", description: "Number of days to look back (default 7)" },
+        },
+      },
+    },
   ],
 }));
 
@@ -421,6 +452,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   else if (name === "list_tags") result = listTags();
   else if (name === "add_note") result = addNote(args);
   else if (name === "get_backlinks") result = getBacklinks(args);
+  else if (name === "get_recent") result = getRecent(args);
   else result = { error: `Unknown tool: ${name}` };
 
   return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };

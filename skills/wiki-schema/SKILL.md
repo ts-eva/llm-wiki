@@ -41,6 +41,7 @@ sources: []
 - `created`: date when page was first created — format from `wiki.date_format` in `config.yaml`
 - `updated`: date when page was last modified — format from `wiki.date_format` in `config.yaml`
 - `sources`: relative paths to files in `sources/` that this page draws from (e.g. `sources/paper.pdf`)
+- `sensitive` *(optional)*: set to `true` to exclude this page from MCP `search_wiki` and `list_pages` results by default. `get_page` still works. Use for personal notes you don't want surfacing in work sessions.
 
 **Date formatting**: read `wiki.date_format` from `config.yaml` before writing any date. Default is `MM/DD/YYYY` (e.g. `05/27/2026`). Tokens: `YYYY` = 4-digit year, `MM` = 2-digit month, `DD` = 2-digit day. Always use ISO `YYYY-MM-DD` for log.md headers — that format is structural and never changes.
 
