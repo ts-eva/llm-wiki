@@ -6,8 +6,6 @@ Markdown, git-backed, accessible from any Claude Code session via MCP.
 
 ## Install
 
-From within a Claude Code session:
-
 ```
 /plugin marketplace add git@gitlab.com:truckstopcom/agentic-development/wiki-notes.git
 /plugin install wiki-notes@wiki-notes-marketplace
@@ -16,87 +14,111 @@ From within a Claude Code session:
 
 **Requirement**: GitLab SSH key with access to the `truckstopcom` org.
 
-## First-time setup
+`/wiki-setup` runs an interactive wizard: creates your wiki repo (default `~/wiki`), asks for name/focus/remote, initializes git, and registers the MCP server so wiki tools are available in every Claude Code session.
 
-`/wiki-setup` runs an interactive wizard that:
-- Creates your personal wiki repo (default: `~/wiki`)
-- Asks for your name, wiki focus/purpose, optional remote URL
-- Initializes git and makes the first commit
-- Registers the MCP server so wiki tools are available in every Claude Code session
-
-## Usage
-
-### From any Claude Code session (ambient mode)
+## Daily workflow
 
 ```
-/wiki-add the payments service requires idempotency keys on all POST endpoints
-/wiki-add                          ← interactive, Claude asks what to add
-/wiki-search event sourcing
-```
+Drop files into sources/          ← zero tokens, any time
+/wiki-add interesting article url ← save a URL or paste text
+/wiki-session                     ← capture today's Claude session
 
-Or naturally mid-conversation:
+/wiki-process                     ← Haiku tags everything, Sonnet organizes
+/wiki-ask how does X work?        ← synthesized answer from your wiki
+/wiki-digest this week            ← what did I learn?
 ```
-"Save that last explanation to my wiki"
-"Do I have any notes on this pattern?"
-```
-
-### From inside the wiki folder (direct mode)
-
-```bash
-cd ~/wiki && claude
-```
-
-CLAUDE.md loads automatically. Best for bulk ingestion or restructuring.
 
 ## Commands
 
-| Command | Description |
-|---|---|
-| `/wiki-setup` | First-time setup wizard |
-| `/wiki-add [content]` | Add a note inline or interactively |
-| `/wiki-search [query]` | Search by text or tag |
-| `/wiki-commit` | Manual commit |
+| Command | Model | What it does |
+|---|---|---|
+| `/wiki-setup` | free | First-time setup wizard |
+| `/wiki-add [text\|url]` | free | Save content to sources/ for later processing |
+| `/wiki-process` | Haiku + Sonnet | Batch tag + organize everything new in sources/ |
+| `/wiki-session [topic]` | Sonnet | Summarize current Claude session → sources/ |
+| `/wiki-ask [question]` | Sonnet | Synthesize answer from wiki pages |
+| `/wiki-search [query]` | free | Find pages by text or tag |
+| `/wiki-digest [range]` | Haiku | "What did I learn this week/month?" |
+| `/wiki-stats` | free | Dashboard: page counts, tags, pipeline status |
+| `/wiki-retag` | Haiku + Sonnet | Consolidate near-duplicate tags |
+| `/wiki-link` | Haiku | Find unlinked page title mentions, add links |
+| `/wiki-autotag` | Haiku | Tag new sources/ files (run by cron or manually) |
+| `/wiki-open` | free | Open wiki vault in Obsidian |
+| `/wiki-convert [format]` | free | Switch between standard and Obsidian link format |
+| `/wiki-commit` | free | Manual git commit |
 
-## MCP tools (available in all sessions)
+## MCP tools (available in every Claude session)
 
 | Tool | Description |
 |---|---|
-| `search_wiki(query, tags?)` | Full-text + tag search |
+| `search_wiki(query, tags?, include_sensitive?)` | Full-text + tag search |
 | `get_page(slug)` | Fetch a page by slug |
-| `list_pages(type?, tag?)` | List pages, filterable |
+| `list_pages(type?, tag?, include_sensitive?)` | List pages, filterable |
 | `list_tags()` | Canonical tag list |
-| `add_note(slug, markdown)` | Write page + update indexes + commit |
+| `add_note(slug, markdown)` | Write wiki page + update indexes + commit |
+| `save_source(content, title?, source_url?)` | Save to sources/ for later pipeline processing |
 | `get_backlinks(source_file)` | Pages referencing a source file |
+| `get_recent(days?)` | Recent log entries (default 7 days) |
+
+## Two ways to use
+
+**Ambient** — MCP tools available in any Claude session. Drop a note, search, ask a question, save something interesting — without leaving your current project.
+
+**Direct** — `cd ~/wiki && claude`. CLAUDE.md loads automatically. Best for bulk ingestion, restructuring, or anything that needs the full wiki in context.
 
 ## Wiki structure
 
 ```
 ~/wiki/
-├── CLAUDE.md          # Claude's operating manual
-├── config.yaml        # Your settings (editable any time)
-├── sources/           # Drop raw material here
+├── CLAUDE.md            # Claude's operating manual
+├── config.yaml          # Your settings
+├── sources/             # Raw material — drop files here
+│   └── index.md         # Haiku-maintained tag index
 └── wiki/
-    ├── index.md       # Master index
-    ├── log.md         # Change history
-    ├── tags.md        # Canonical tags
-    ├── backlinks.md   # Source → page index
-    └── pages/         # Wiki pages
+    ├── index.md         # Master navigation index
+    ├── log.md           # Append-only change history
+    ├── tags.md          # Canonical tag list
+    ├── backlinks.md     # Source → page inverse index
+    └── pages/           # Wiki pages
 ```
 
-## config.yaml options
+## config.yaml
 
 ```yaml
 wiki:
   name: "My Wiki"
   focus: "general personal and work notes"
   author: "Your Name"
+  link_format: standard       # standard | obsidian
+  date_format: "MM/DD/YYYY"   # date display — YYYY-MM-DD for ISO
 
 git:
   auto_commit: true    # commit before session ends
   auto_push: false     # push after commit (requires remote)
   auto_pull: true      # pull at session start (requires remote)
+
+mcp:
+  path: "/absolute/path/to/wiki"
 ```
 
-## Obsidian compatibility
+## Agents
 
-The wiki data folder is designed to be Obsidian-compatible. Point Obsidian at `~/wiki/wiki/` as the vault root. YAML frontmatter, tags, and folder structure work natively. See the plan doc for the full migration path to `[[wikilinks]]` format.
+| Agent | Model | Role |
+|---|---|---|
+| `wiki-tagger` | Haiku | First pass: reads raw source, writes structured entry to sources/index.md |
+| `wiki-curator` | Sonnet | Organization: reads sources/index.md entries, writes wiki pages |
+| `wiki-analyst` | Haiku | Lightweight analysis: tag deduplication, digest summarization |
+
+## Scheduled auto-tagging (optional)
+
+Set up a daily cron to tag new files automatically without opening a session:
+
+```
+/cron "daily wiki autotag" "0 9 * * *" "run /wiki-autotag in my wiki at <wiki-path>"
+```
+
+Haiku tags new sources each morning. Run `/wiki-process` when you're ready to organize.
+
+## Obsidian support
+
+Run `/wiki-setup` and choose Obsidian mode to get `[[wikilinks]]`, graph view, and Dataview support. Switch any time with `/wiki-convert`. Standard mode renders everywhere (GitHub, VS Code, Warp).
