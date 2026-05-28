@@ -87,28 +87,6 @@ One entry per page, grouped by type. Format:
 
 Always keep entries sorted alphabetically within each group.
 
-## Maintaining wiki/index.md
-
-One entry per page, grouped by type. Format:
-
-```markdown
-# [Wiki Name]
-
-## Entities
-- [Title](pages/filename.md) — one-line summary
-
-## Concepts
-- [Title](pages/filename.md) — one-line summary
-
-## Summaries
-- [Title](pages/filename.md) — one-line summary
-
-## Syntheses
-- [Title](pages/filename.md) — one-line summary
-```
-
-Always keep entries sorted alphabetically within each group.
-
 ## Maintaining wiki/log.md
 
 Append-only. Never edit past entries. Format each entry as:

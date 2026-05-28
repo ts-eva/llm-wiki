@@ -175,7 +175,7 @@ console.log(`  ✓ config.yaml updated to link_format: ${TARGET}`);
 
 console.log(`\nDone. ${convertedCount} page(s) converted to ${TARGET} format.`);
 if (TARGET === "obsidian") {
-  console.log("Open wiki/wiki/ in Obsidian as your vault. Install the Dataview plugin for query support.");
+  console.log(`Open ${WIKI_PATH}/wiki/ in Obsidian as your vault. Install the Dataview plugin for query support.`);
 } else {
   console.log("Links now render on GitLab, GitHub, VS Code, Warp, and any editor.");
 }
