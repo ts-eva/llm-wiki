@@ -7,7 +7,7 @@ Markdown, git-backed, accessible from any Claude Code session via MCP.
 ## Install
 
 ```
-/plugin marketplace add https://github.com/ts-eva/llm-wiki.git
+/plugin marketplace add git@github.com:ts-eva/llm-wiki.git
 /plugin install llm-wiki@llm-wiki-marketplace
 /wiki-setup
 ```
@@ -21,6 +21,9 @@ claude mcp add llm-wiki --env WIKI_PATH="<absolute-path-to-your-wiki>" -- node "
 Where `<plugin-dir>` is found via:
 ```bash
 find "$HOME/.claude" -type d -name "llm-wiki" 2>/dev/null | head -1
+```
+
+**Requirement**: GitHub SSH key with access to `ts-eva/llm-wiki`.
 ```
 
 ## Daily workflow
