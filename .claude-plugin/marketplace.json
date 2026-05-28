@@ -1,12 +1,12 @@
 {
   "name": "llm-wiki-marketplace",
-  "owner": { "name": "Truckstop DevTools" },
+  "owner": { "name": "Eva Li" },
   "plugins": [
     {
       "name": "llm-wiki",
       "source": {
         "source": "url",
-        "url": "git@gitlab.com:truckstopcom/agentic-development/llm-wiki.git"
+        "url": "https://github.com/ts-eva/llm-wiki.git"
       },
       "description": "Personal knowledge wiki managed by Claude. Markdown, git-backed, MCP-accessible from any project."
     }
