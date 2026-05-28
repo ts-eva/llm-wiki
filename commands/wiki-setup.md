@@ -77,7 +77,9 @@ mcp:
   path: "<WIKI_PATH_ABSOLUTE>"
 ```
 
-Substitute: WIKI_NAME, FOCUS, AUTHOR from user answers. AUTO_PUSH and AUTO_PULL as `true` or `false`. WIKI_PATH_ABSOLUTE as the resolved absolute path.
+Substitute: WIKI_NAME, FOCUS, AUTHOR from user answers. WIKI_PATH_ABSOLUTE as the resolved absolute path.
+- If no remote URL was provided: AUTO_PUSH = `false`, AUTO_PULL = `false`
+- If remote URL was provided: AUTO_PUSH and AUTO_PULL from user answers (`true` or `false`)
 
 ---
 
