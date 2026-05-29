@@ -4,121 +4,138 @@ Run the llm-wiki first-time setup wizard. This creates the user's personal wiki 
 
 ## Phase 1: Collect settings
 
-**CRITICAL RULE: Ask exactly one question per message. Send the question, then stop — do not output anything else. Do not ask the next question until the user has replied to the current one. Never display multiple questions in one message.**
-
-Run this first to get `GIT_NAME` and `HOME`, then display the header and ask Q1:
+Run this first to get `GIT_NAME` and `HOME`:
 ```
 git config --global user.name 2>/dev/null; echo "HOME=$HOME"
 ```
 
-Display the header, then immediately ask Q1 in the same message:
+Display the header:
 ```
 ╔══════════════════════════════════════╗
 ║            llm-wiki setup            ║
 ╚══════════════════════════════════════╝
 ```
 
----
-
-**Q1 — Wiki name** (ask this, then stop and wait for reply)
-
-> **Wiki name** [My Wiki]
->
-> 1. My Wiki *(default)*
-> 2. Work Notes
-> Or type anything, or describe what you want.
-
-Store as WIKI_NAME (blank → `My Wiki`). Compute SLUG = lowercased, spaces → hyphens (e.g. "Dev Journal" → `dev-journal`). Compute default path = `<HOME>/<SLUG>`.
+Use `AskUserQuestion` for each question below — **one call per question, never bundled**. Wait for the user's answer before calling the next one.
 
 ---
 
-**Q2 — Wiki location** (ask this, then stop and wait for reply)
+**Q1 — Wiki name**
 
-> **Wiki location** [`<HOME>/<SLUG>`]
->
-> 1. `<HOME>/<SLUG>` *(default — e.g. ~/dev-journal)*
-> 2. `<HOME>/wiki`
-> Or type any path.
+`AskUserQuestion`:
+- header: `Wiki name`
+- question: `What should your wiki be called?`
+- options:
+  - label: `My Wiki`, description: `Default`
+  - label: `Work Notes`, description: `For a work-focused wiki`
 
-Store as WIKI_PATH (blank → computed default). Expand any `~` to HOME.
-
----
-
-**Q3 — Your name** (ask this, then stop and wait for reply)
-
-> **Your name** [`<GIT_NAME>`]
->
-> 1. `<GIT_NAME>` *(default — from git config)*
-> 2. Anonymous
-> Or type anything.
-
-Store as AUTHOR (blank → GIT_NAME).
+Store as WIKI_NAME. Compute SLUG = lowercased, spaces → hyphens (e.g. "Dev Journal" → `dev-journal`). Compute default path = `<HOME>/<SLUG>`.
 
 ---
 
-**Q4 — Focus / purpose** (ask this, then stop and wait for reply)
+**Q2 — Wiki location**
 
-> **Focus** [general personal and work notes]
->
-> 1. General personal and work notes *(default)*
-> 2. Work projects and technical notes
-> Or describe your focus in your own words.
+`AskUserQuestion`:
+- header: `Wiki location`
+- question: `Where should the wiki be created?`
+- options:
+  - label: `<HOME>/<SLUG>` *(fill in computed value, e.g. ~/dev-journal)*, description: `Default`
+  - label: `<HOME>/wiki`, description: `Generic ~/wiki`
 
-Store as FOCUS (blank → `general personal and work notes`).
-
----
-
-**Q5 — Date format** (ask this, then stop and wait for reply)
-
-> **Date format** [1]
->
-> - 1  MM/DD/YYYY  (e.g. 05/28/2026 — US)
-> - 2  YYYY-MM-DD  (e.g. 2026-05-28 — ISO)
-> - 3  DD/MM/YYYY  (e.g. 28/05/2026 — European)
-
-Store as DATE_FORMAT: `1`→`MM/DD/YYYY`, `2`→`YYYY-MM-DD`, `3`→`DD/MM/YYYY` (blank → `MM/DD/YYYY`).
+Store as WIKI_PATH (option 1 or blank → computed default). Expand any `~` to HOME.
 
 ---
 
-**Q6 — Editor mode** (ask this, then stop and wait for reply)
+**Q3 — Your name**
 
-> **Editor / browse mode** [1]
->
-> - 1  Standard — `[Title](pages/slug.md)` links, renders in any IDE, Warp, VS Code, GitLab/GitHub
-> - 2  Obsidian — `[[wikilinks]]`, graph view and Dataview (won't render on GitLab/GitHub web UI)
+`AskUserQuestion`:
+- header: `Your name`
+- question: `Name to appear as wiki author?`
+- options:
+  - label: `<GIT_NAME>` *(fill in from git config)*, description: `From your git config`
+  - label: `Anonymous`, description: `Leave author blank`
 
-Store as LINK_FORMAT: `1`→`standard`, `2`→`obsidian` (blank → `standard`).
-
----
-
-**Q7 — Remote URL** (ask this, then stop and wait for reply)
-
-> **Remote URL** [skip]
->
-> A private GitHub or GitLab repo for backup/sync. Paste the SSH URL or press Enter to skip.
-
-If blank or "skip": REMOTE_URL = none, AUTO_PUSH = `false`, AUTO_PULL = `false`. Skip Q8/Q9 and go to Phase 2.
-If a URL was given: store as REMOTE_URL and continue to Q8.
+Store as AUTHOR.
 
 ---
 
-**Q8 — Auto-push** *(only if remote URL provided)* (ask this, then stop and wait for reply)
+**Q4 — Focus / purpose**
 
-> **Auto-push after commit?** [N]
->
-> Automatically push to remote after each wiki commit? (y/N)
+`AskUserQuestion`:
+- header: `Focus`
+- question: `What is this wiki for? Helps Claude decide what's worth adding.`
+- options:
+  - label: `General personal and work notes`, description: `Default`
+  - label: `Work projects and technical notes`, description: `Engineering / product focus`
 
-Store as AUTO_PUSH: `y`/`yes`→`true`, anything else→`false` (blank → `false`).
+Store as FOCUS.
 
 ---
 
-**Q9 — Auto-pull** *(only if remote URL provided)* (ask this, then stop and wait for reply)
+**Q5 — Date format**
 
-> **Auto-pull at session start?** [Y]
->
-> Automatically pull from remote when opening the wiki? (Y/n)
+`AskUserQuestion`:
+- header: `Date format`
+- question: `How should dates appear in wiki pages?`
+- options:
+  - label: `MM/DD/YYYY`, description: `e.g. 05/28/2026 — US`
+  - label: `YYYY-MM-DD`, description: `e.g. 2026-05-28 — ISO`
+  - label: `DD/MM/YYYY`, description: `e.g. 28/05/2026 — European`
 
-Store as AUTO_PULL: `n`/`no`→`false`, anything else→`true` (blank → `true`).
+Store as DATE_FORMAT (use label value directly).
+
+---
+
+**Q6 — Editor mode**
+
+`AskUserQuestion`:
+- header: `Editor mode`
+- question: `How will you read and browse your wiki?`
+- options:
+  - label: `Standard`, description: `[Title](pages/slug.md) links — renders in any IDE, Warp, VS Code, GitLab/GitHub`
+  - label: `Obsidian`, description: `[[wikilinks]] — graph view and Dataview (won't render on GitLab/GitHub web UI)`
+
+Store as LINK_FORMAT: `Standard`→`standard`, `Obsidian`→`obsidian`.
+
+---
+
+**Q7 — Remote URL**
+
+`AskUserQuestion`:
+- header: `Remote URL`
+- question: `Add a remote git repo for backup/sync?`
+- options:
+  - label: `Skip — local only`, description: `No remote; wiki stays on this machine`
+  - label: `I have a remote URL`, description: `You'll type the SSH URL in the text field`
+
+If "Skip": set REMOTE_URL = none, AUTO_PUSH = `false`, AUTO_PULL = `false`. Go to Phase 2.
+If "I have a remote URL" or user typed a URL via Other: store as REMOTE_URL, ask Q8.
+
+---
+
+**Q8 — Auto-push** *(only if remote URL provided)*
+
+`AskUserQuestion`:
+- header: `Auto-push`
+- question: `Automatically push to remote after each commit?`
+- options:
+  - label: `No`, description: `Push manually with /llm-wiki:wiki-commit`
+  - label: `Yes`, description: `Push after every wiki commit`
+
+Store as AUTO_PUSH: `Yes`→`true`, `No`→`false`.
+
+---
+
+**Q9 — Auto-pull** *(only if remote URL provided)*
+
+`AskUserQuestion`:
+- header: `Auto-pull`
+- question: `Automatically pull from remote at session start?`
+- options:
+  - label: `Yes`, description: `Always pull latest on session open`
+  - label: `No`, description: `Pull manually`
+
+Store as AUTO_PULL: `Yes`→`true`, `No`→`false`.
 
 ---
 
