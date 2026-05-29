@@ -11,101 +11,122 @@ Display the header:
 ╚══════════════════════════════════════╝
 ```
 
-Then collect settings using `AskUserQuestion` in three sequential rounds. Each round must complete (user responds) before proceeding to the next. First run:
+Run this first to get `GIT_NAME` and `HOME`:
 ```
 git config --global user.name 2>/dev/null; echo "HOME=$HOME"
 ```
-to get `GIT_NAME` and `HOME`.
+
+Ask each question one at a time using a **separate `AskUserQuestion` call per question**. Do not bundle multiple questions into one call. Wait for the user's answer before asking the next.
 
 ---
 
-### Round 1 — Identity (call AskUserQuestion with these 2 questions)
-
 **Q1 — Wiki name**
+Call `AskUserQuestion`:
 - header: `Wiki name`
 - question: `What do you want to name your wiki?`
 - options:
-  - label: `My Wiki`, description: `Default — good for a general personal wiki`
-  - label: `Work Notes`, description: `If this is primarily for work`
+  - label: `My Wiki`, description: `Default`
+  - label: `Work Notes`, description: `For a work-focused wiki`
 
-**Q2 — Your name**
-- header: `Your name`
-- question: `What name should appear as the wiki author?`
-- options:
-  - label: `<GIT_NAME>`, description: `From your git config`
-  - label: `Anonymous`, description: `Leave author blank`
-
-After Round 1: compute the wiki name slug (lowercase, spaces → hyphens) and the default location `<HOME>/<slug>`.
+→ Store as WIKI_NAME. Compute SLUG = WIKI_NAME lowercased with spaces replaced by hyphens. Compute default location = `<HOME>/<SLUG>`.
 
 ---
 
-### Round 2 — Setup (call AskUserQuestion with these 3 questions)
-
-**Q3 — Wiki location**
+**Q2 — Wiki location**
+Call `AskUserQuestion`:
 - header: `Wiki location`
 - question: `Where should the wiki be created?`
 - options:
-  - label: `<HOME>/<slug>` (computed from Q1 answer), description: `Default location`
-  - label: `<HOME>/wiki`, description: `Generic ~/wiki path`
+  - label: `<HOME>/<SLUG>` (fill in computed value), description: `Default`
+  - label: `<HOME>/wiki`, description: `Generic ~/wiki`
+
+→ Store as WIKI_PATH. Expand any `~` to HOME.
+
+---
+
+**Q3 — Your name**
+Call `AskUserQuestion`:
+- header: `Your name`
+- question: `What name should appear as the wiki author?`
+- options:
+  - label: `<GIT_NAME>` (fill in from git config), description: `From your git config`
+  - label: `Anonymous`, description: `Leave author blank`
+
+→ Store as AUTHOR.
+
+---
 
 **Q4 — Focus / purpose**
+Call `AskUserQuestion`:
 - header: `Focus`
-- question: `What is this wiki for? (helps Claude decide what's worth adding)`
+- question: `What is this wiki for? This helps Claude decide what's worth adding.`
 - options:
   - label: `General personal and work notes`, description: `Default`
   - label: `Work projects and technical notes`, description: `Engineering / product focus`
 
-**Q5 — Date format**
-- header: `Date format`
-- question: `How should dates be displayed in wiki pages?`
-- options:
-  - label: `MM/DD/YYYY`, description: `e.g. 05/28/2026 — US format`
-  - label: `YYYY-MM-DD`, description: `e.g. 2026-05-28 — ISO format`
-  - label: `DD/MM/YYYY`, description: `e.g. 28/05/2026 — European format`
+→ Store as FOCUS.
 
 ---
 
-### Round 3 — Editor and sync (call AskUserQuestion with these 2 questions)
+**Q5 — Date format**
+Call `AskUserQuestion`:
+- header: `Date format`
+- question: `How should dates be displayed in wiki pages?`
+- options:
+  - label: `MM/DD/YYYY`, description: `e.g. 05/28/2026 — US`
+  - label: `YYYY-MM-DD`, description: `e.g. 2026-05-28 — ISO`
+  - label: `DD/MM/YYYY`, description: `e.g. 28/05/2026 — European`
+
+→ Store as DATE_FORMAT (use label value directly).
+
+---
 
 **Q6 — Editor / browse mode**
+Call `AskUserQuestion`:
 - header: `Editor mode`
 - question: `How will you read and browse your wiki?`
 - options:
-  - label: `Standard`, description: `[Title](pages/slug.md) links — renders in any IDE, Warp, VS Code, GitLab web`
-  - label: `Obsidian`, description: `[[wikilinks]] — graph view and Dataview queries, but won't render on GitLab/GitHub web UI`
+  - label: `Standard`, description: `[Title](pages/slug.md) links — renders in any IDE, Warp, VS Code, GitLab/GitHub`
+  - label: `Obsidian`, description: `[[wikilinks]] — graph view and Dataview, but won't render on GitLab/GitHub web UI`
+
+→ Store as LINK_FORMAT: `standard` or `obsidian`.
+
+---
 
 **Q7 — Remote URL**
+Call `AskUserQuestion`:
 - header: `Remote URL`
-- question: `Add a remote git repo for backup/sync? (private GitHub or GitLab repo)`
+- question: `Add a remote git repo for backup/sync?`
 - options:
   - label: `Skip — local only`, description: `No remote; wiki stays on this machine`
-  - label: `I have a remote repo URL`, description: `You'll enter the URL via Other`
+  - label: `I have a remote repo URL`, description: `Enter the URL via the text field below`
 
-If Q7 = "I have a remote repo URL" or "Other" (user typed a URL): call `AskUserQuestion` with two more questions:
+→ If user selects "Skip": set REMOTE_URL = none, AUTO_PUSH = `false`, AUTO_PULL = `false`. Skip Q8 and Q9.
+→ If user selects "I have a remote repo URL" or types a URL via Other: store as REMOTE_URL, then ask Q8 and Q9.
 
-**Q8 — Auto-push**
+---
+
+**Q8 — Auto-push** *(only if REMOTE_URL was provided)*
+Call `AskUserQuestion`:
 - header: `Auto-push`
 - question: `Automatically push to remote after each commit?`
 - options:
-  - label: `No`, description: `Push manually with /wiki-commit`
+  - label: `No`, description: `Push manually with /llm-wiki:wiki-commit`
   - label: `Yes`, description: `Push after every wiki commit`
 
-**Q9 — Auto-pull**
+→ Store as AUTO_PUSH: `true` or `false`.
+
+---
+
+**Q9 — Auto-pull** *(only if REMOTE_URL was provided)*
+Call `AskUserQuestion`:
 - header: `Auto-pull`
 - question: `Automatically pull from remote at session start?`
 - options:
   - label: `Yes`, description: `Always pull latest on session open`
   - label: `No`, description: `Pull manually`
 
-If Q7 = "Skip": set AUTO_PUSH = `false`, AUTO_PULL = `false` — do not ask Q8/Q9.
-
----
-
-### After all rounds
-
-Store all answers. If the user selected "Other" for any question, use whatever text they typed.
-- Q3 location: expand any `~` to the HOME value from the shell command
-- Q5 date format: use the label value directly (`MM/DD/YYYY`, `YYYY-MM-DD`, or `DD/MM/YYYY`)
+→ Store as AUTO_PULL: `true` or `false`.
 
 ---
 

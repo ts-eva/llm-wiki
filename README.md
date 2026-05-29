@@ -10,10 +10,10 @@ Markdown, git-backed, accessible from any Claude Code session via MCP.
 /plugin marketplace add git@github.com:ts-eva/llm-wiki.git
 /plugin install llm-wiki@llm-wiki-marketplace
 /reload-plugins
-/wiki-setup
+/llm-wiki:wiki-setup
 ```
 
-`/wiki-setup` runs an interactive wizard: creates your wiki repo (default `~/wiki`), asks for name/focus/remote, initializes git, and **automatically registers the MCP server** so wiki tools are available in every Claude Code session.
+`/llm-wiki:wiki-setup` runs an interactive wizard: creates your wiki repo (default `~/wiki`), asks for name/focus/remote, initializes git, and **automatically registers the MCP server** so wiki tools are available in every Claude Code session.
 
 **Manual MCP registration** (if you need to re-run or the wizard failed):
 ```bash
@@ -30,33 +30,33 @@ find "$HOME/.claude" -type d -name "llm-wiki" 2>/dev/null | head -1
 ## Daily workflow
 
 ```
-Drop files into sources/          ← zero tokens, any time
-/wiki-add interesting article url ← save a URL or paste text
-/wiki-session                     ← capture today's Claude session
+Drop files into sources/                    ← zero tokens, any time
+/llm-wiki:wiki-add interesting article url ← save a URL or paste text
+/llm-wiki:wiki-session                     ← capture today's Claude session
 
-/wiki-process                     ← Haiku tags everything, Sonnet organizes
-/wiki-ask how does X work?        ← synthesized answer from your wiki
-/wiki-digest this week            ← what did I learn?
+/llm-wiki:wiki-process                     ← Haiku tags everything, Sonnet organizes
+/llm-wiki:wiki-ask how does X work?        ← synthesized answer from your wiki
+/llm-wiki:wiki-digest this week            ← what did I learn?
 ```
 
 ## Commands
 
 | Command | Model | What it does |
 |---|---|---|
-| `/wiki-setup` | free | First-time setup wizard |
-| `/wiki-add [text\|url]` | free | Save content to sources/ for later processing |
-| `/wiki-process` | Haiku + Sonnet | Batch tag + organize everything new in sources/ |
-| `/wiki-session [topic]` | Sonnet | Summarize current Claude session → sources/ |
-| `/wiki-ask [question]` | Sonnet | Synthesize answer from wiki pages |
-| `/wiki-search [query]` | free | Find pages by text or tag |
-| `/wiki-digest [range]` | Haiku | "What did I learn this week/month?" |
-| `/wiki-stats` | free | Dashboard: page counts, tags, pipeline status |
-| `/wiki-retag` | Haiku + Sonnet | Consolidate near-duplicate tags |
-| `/wiki-link` | Haiku | Find unlinked page title mentions, add links |
-| `/wiki-autotag` | Haiku | Tag new sources/ files (run by cron or manually) |
-| `/wiki-open` | free | Open wiki vault in Obsidian |
-| `/wiki-convert [format]` | free | Switch between standard and Obsidian link format |
-| `/wiki-commit` | free | Manual git commit |
+| `/llm-wiki:wiki-setup` | free | First-time setup wizard |
+| `/llm-wiki:wiki-add [text\|url]` | free | Save content to sources/ for later processing |
+| `/llm-wiki:wiki-process` | Haiku + Sonnet | Batch tag + organize everything new in sources/ |
+| `/llm-wiki:wiki-session [topic]` | Sonnet | Summarize current Claude session → sources/ |
+| `/llm-wiki:wiki-ask [question]` | Sonnet | Synthesize answer from wiki pages |
+| `/llm-wiki:wiki-search [query]` | free | Find pages by text or tag |
+| `/llm-wiki:wiki-digest [range]` | Haiku | "What did I learn this week/month?" |
+| `/llm-wiki:wiki-stats` | free | Dashboard: page counts, tags, pipeline status |
+| `/llm-wiki:wiki-retag` | Haiku + Sonnet | Consolidate near-duplicate tags |
+| `/llm-wiki:wiki-link` | Haiku | Find unlinked page title mentions, add links |
+| `/llm-wiki:wiki-autotag` | Haiku | Tag new sources/ files (run by cron or manually) |
+| `/llm-wiki:wiki-open` | free | Open wiki vault in Obsidian |
+| `/llm-wiki:wiki-convert [format]` | free | Switch between standard and Obsidian link format |
+| `/llm-wiki:wiki-commit` | free | Manual git commit |
 
 ## MCP tools (available in every Claude session)
 
@@ -126,11 +126,11 @@ mcp:
 Set up a daily cron to tag new files automatically without opening a session:
 
 ```
-/cron "daily wiki autotag" "0 9 * * *" "run /wiki-autotag in my wiki at <wiki-path>"
+/cron "daily wiki autotag" "0 9 * * *" "run /llm-wiki:wiki-autotag in my wiki at <wiki-path>"
 ```
 
-Haiku tags new sources each morning. Run `/wiki-process` when you're ready to organize.
+Haiku tags new sources each morning. Run `/llm-wiki:wiki-process` when you're ready to organize.
 
 ## Obsidian support
 
-Run `/wiki-setup` and choose Obsidian mode to get `[[wikilinks]]`, graph view, and Dataview support. Switch any time with `/wiki-convert`. Standard mode renders everywhere (GitHub, VS Code, Warp).
+Run `/llm-wiki:wiki-setup` and choose Obsidian mode to get `[[wikilinks]]`, graph view, and Dataview support. Switch any time with `/llm-wiki:wiki-convert`. Standard mode renders everywhere (GitHub, VS Code, Warp).
