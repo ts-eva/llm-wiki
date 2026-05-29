@@ -9,7 +9,7 @@ Markdown, git-backed, accessible from any Claude Code session via MCP.
 ```
 /plugin marketplace add git@github.com:ts-eva/llm-wiki.git
 /plugin install llm-wiki@llm-wiki-marketplace
-/plugin reload
+/reload-plugins
 /wiki-setup
 ```
 
