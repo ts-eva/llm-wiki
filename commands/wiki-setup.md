@@ -24,9 +24,11 @@ Display the header, then immediately ask Q1 in the same message:
 
 > **Wiki name** [My Wiki]
 >
-> What should your wiki be called? Press Enter for the default.
+> 1. My Wiki *(default)*
+> 2. Work Notes
+> Or type anything, or describe what you want.
 
-Store as WIKI_NAME (blank → `My Wiki`). Compute SLUG = lowercased, spaces → hyphens. Compute default path = `<HOME>/<SLUG>`.
+Store as WIKI_NAME (blank → `My Wiki`). Compute SLUG = lowercased, spaces → hyphens (e.g. "Dev Journal" → `dev-journal`). Compute default path = `<HOME>/<SLUG>`.
 
 ---
 
@@ -34,7 +36,9 @@ Store as WIKI_NAME (blank → `My Wiki`). Compute SLUG = lowercased, spaces → 
 
 > **Wiki location** [`<HOME>/<SLUG>`]
 >
-> Where should the wiki be created? Press Enter for the default.
+> 1. `<HOME>/<SLUG>` *(default — e.g. ~/dev-journal)*
+> 2. `<HOME>/wiki`
+> Or type any path.
 
 Store as WIKI_PATH (blank → computed default). Expand any `~` to HOME.
 
@@ -44,7 +48,9 @@ Store as WIKI_PATH (blank → computed default). Expand any `~` to HOME.
 
 > **Your name** [`<GIT_NAME>`]
 >
-> Name to appear as wiki author. Press Enter for the default.
+> 1. `<GIT_NAME>` *(default — from git config)*
+> 2. Anonymous
+> Or type anything.
 
 Store as AUTHOR (blank → GIT_NAME).
 
@@ -54,7 +60,9 @@ Store as AUTHOR (blank → GIT_NAME).
 
 > **Focus** [general personal and work notes]
 >
-> What is this wiki for? This helps Claude decide what's worth adding. Press Enter for the default.
+> 1. General personal and work notes *(default)*
+> 2. Work projects and technical notes
+> Or describe your focus in your own words.
 
 Store as FOCUS (blank → `general personal and work notes`).
 
