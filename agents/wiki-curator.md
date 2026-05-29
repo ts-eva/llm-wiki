@@ -22,7 +22,7 @@ When invoked:
    - What type: entity, concept, summary, or synthesis?
 4. Write or update `wiki/pages/<slug>.md` using the sources/index.md entry as your primary input
 5. After creating the page, update `wiki-pages:` in the sources/index.md entry with the page path
-6. Update `wiki/index.md`, `wiki/log.md`, `wiki/backlinks.md`
+6. Update `wiki/index.md`, `log.md` (root), `backlinks.md` (root)
 7. Commit: `git add . && git commit -m "wiki: organize <title>"`
 
 ## When to read raw sources

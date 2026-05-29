@@ -12,7 +12,7 @@ If $ARGUMENTS is empty, ask the user:
 **Standard → Obsidian:**
 - Converts all `[Title](pages/slug.md)` links to `[[slug]]`
 - Removes `## Sources` sections (Obsidian tracks backlinks natively)
-- Deletes `wiki/backlinks.md`
+- Deletes `backlinks.md` (root)
 - Scaffolds `wiki/.obsidian/` if not already present
 - Updates `config.yaml` → `link_format: obsidian`
 
@@ -20,7 +20,7 @@ If $ARGUMENTS is empty, ask the user:
 - Converts `[[slug]]` → `[Title](pages/slug.md)` (title looked up from page frontmatter)
 - Converts `[[slug|Display]]` → `[Display](pages/slug.md)`
 - Rebuilds `## Sources` sections from each page's `sources` frontmatter
-- Rebuilds `wiki/backlinks.md` from scratch
+- Rebuilds `backlinks.md` (root) from scratch
 - Removes `wiki/.obsidian/` folder
 - Updates `config.yaml` → `link_format: standard`
 

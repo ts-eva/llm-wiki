@@ -21,7 +21,7 @@ Show a quick dashboard of your wiki's current state. Free — no model needed.
 - Organized = entries in sources/index.md where `wiki-pages:` is non-empty
 
 ### Activity
-- Read `wiki/log.md` — count entries this calendar month
+- Read `log.md` (root) — count entries this calendar month
 - Report last 5 log entries
 
 ## Output format

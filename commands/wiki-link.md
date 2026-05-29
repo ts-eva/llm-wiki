@@ -29,5 +29,5 @@ payments-architecture.md mentions but doesn't link:
    - Obsidian mode: `[[slug]]`
    - Do NOT link occurrences inside existing links, headings, or frontmatter
 
-8. Update `wiki/log.md`: `## [YYYY-MM-DD] update | <page title>` for each edited page
+8. Update `log.md` (root): `## [YYYY-MM-DD] update | <page title>` for each edited page
 9. Commit: `git add . && git commit -m "wiki: add missing links (N pages updated)"`

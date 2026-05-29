@@ -149,8 +149,8 @@ for (const { slug, fullPath } of pageFiles()) {
   console.log(`  ✓ ${slug}.md`);
 }
 
-// Handle backlinks.md
-const backlinksPath = path.join(WIKI_DIR, "backlinks.md");
+// Handle backlinks.md (root-level)
+const backlinksPath = path.join(WIKI_PATH, "backlinks.md");
 if (TARGET === "obsidian") {
   if (fs.existsSync(backlinksPath)) {
     fs.unlinkSync(backlinksPath);

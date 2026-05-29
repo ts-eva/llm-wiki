@@ -73,6 +73,12 @@ function readWikiFile(name) {
   return fs.readFileSync(filePath, "utf8");
 }
 
+function readRootFile(name) {
+  const filePath = path.join(WIKI_PATH, name);
+  if (!fs.existsSync(filePath)) return "";
+  return fs.readFileSync(filePath, "utf8");
+}
+
 function writeWikiFile(name, content) {
   const filePath = path.join(WIKI_DIR, name);
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -253,7 +259,7 @@ function getRecent({ days = 7 } = {}) {
   cutoff.setDate(cutoff.getDate() - days);
   const cutoffStr = cutoff.toISOString().split("T")[0];
 
-  const raw = readWikiFile("log.md");
+  const raw = readRootFile("log.md");
   const entries = [];
   for (const line of raw.split("\n")) {
     const match = line.match(/^## \[(\d{4}-\d{2}-\d{2})\] (\w+) \| (.+)$/);
@@ -314,21 +320,14 @@ function addNote({ slug, markdown }) {
   }
   fs.writeFileSync(indexPath, index, "utf8");
 
-  // Append to log.md — use obsidian append in obsidian mode (no read needed)
-  const logPath = path.join(WIKI_DIR, "log.md");
+  // Append to log.md (root-level operational file, not in vault)
+  const logPath = path.join(WIKI_PATH, "log.md");
   const logEntry = `\n## [${today()}] add | ${title || slug}`;
-  let appendedViaObsidian = false;
-  if (useObsidian()) {
-    try {
-      obsidianRun(`append "wiki/log.md" "${logEntry.replace(/"/g, '\\"')}"`);
-      appendedViaObsidian = true;
-    } catch { /* fall through */ }
-  }
-  if (!appendedViaObsidian) fs.appendFileSync(logPath, logEntry, "utf8");
+  fs.appendFileSync(logPath, logEntry, "utf8");
 
-  // Update backlinks.md
+  // Update backlinks.md (root-level operational file)
   if (sources.length) {
-    const backlinksPath = path.join(WIKI_DIR, "backlinks.md");
+    const backlinksPath = path.join(WIKI_PATH, "backlinks.md");
     let backlinks = fs.existsSync(backlinksPath) ? fs.readFileSync(backlinksPath, "utf8") : "# Backlinks\n";
     for (const src of sources) {
       const link = `- [${title || slug}](pages/${slug}.md)`;
@@ -357,8 +356,8 @@ function getBacklinks({ source_file }) {
 
   const results = [];
 
-  // Standard mode: read backlinks.md
-  const backlinksRaw = readWikiFile("backlinks.md");
+  // Standard mode: read backlinks.md (root-level)
+  const backlinksRaw = readRootFile("backlinks.md");
   if (backlinksRaw) {
     const lines = backlinksRaw.split("\n");
     let inSection = false;
@@ -513,7 +512,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 
   if (uri === "wiki://index") text = readWikiFile("index.md");
   else if (uri === "wiki://tags") text = readWikiFile("tags.md");
-  else if (uri === "wiki://log") text = readWikiFile("log.md");
+  else if (uri === "wiki://log") text = readRootFile("log.md");
   else if (uri.startsWith("wiki://page/")) {
     const slug = uri.replace("wiki://page/", "");
     const page = readPage(slug);

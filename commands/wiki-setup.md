@@ -4,32 +4,46 @@ Run the llm-wiki first-time setup wizard. This creates the user's personal wiki 
 
 ## Phase 1: Collect settings
 
-Display this header:
+First, run this command to get the user's git name and HOME path:
+```
+git config --global user.name 2>/dev/null; echo "HOME=$HOME"
+```
+
+Then send **exactly this message** to the user and stop — do not proceed to Phase 2 until they reply:
+
+---
+
 ```
 ╔══════════════════════════════════════╗
-║   llm-wiki setup                   ║
+║            llm-wiki setup            ║
 ╚══════════════════════════════════════╝
 ```
 
-Ask the user for each of the following, showing the default in brackets. Accept Enter to use the default.
+Please answer each question (press Enter to accept the default in brackets):
 
-1. **Wiki name** — default: `My Wiki`
-2. **Wiki location** — default: `~/<wiki-name-slug>` where the slug is the wiki name lowercased with spaces replaced by hyphens (e.g. name "tsm" → `~/tsm`, name "My Wiki" → `~/my-wiki`). Expand ~ to absolute path.
-3. **Your name** — default: output of `git config --global user.name` (run this command to get it)
-4. **Focus / purpose** — default: `general personal and work notes` — explain: "This helps Claude decide what's worth adding"
-5. **Editor / browse mode** — ask: "How will you read and browse your wiki?"
-   - `1` Standard (any IDE, Warp, VS Code, GitLab web) — default
-   - `2` Obsidian vault (graph view, Dataview queries, native backlinks)
-   
-   Explain the difference:
-   - Standard uses regular Markdown links `[Title](pages/slug.md)` — renders everywhere, works in any editor or terminal
-   - Obsidian uses `[[wikilinks]]` — enables graph view and native backlinks, but links won't render on GitLab/GitHub web UI
-   
-6. **Remote URL** — default: skip — explain: "A private GitHub or GitLab repo for backup/sync. Press Enter to skip."
-7. **Auto-push after commit?** — default: `N` (y/N)
-8. **Auto-pull at session start?** — default: `Y` (Y/n) — only asked if a remote URL was provided
+1. **Wiki name** — [My Wiki]
+2. **Wiki location** — [/Users/<you>/<wiki-name-slug>]  *(e.g. name "tsm" → ~/tsm)*
+3. **Your name** — [<git-user-name>]
+4. **Focus / purpose** — [general personal and work notes]  *(helps Claude decide what's worth adding)*
+5. **Editor / browse mode** — [1]
+   - 1 Standard (any IDE, Warp, VS Code, GitLab web) — uses `[Title](pages/slug.md)` links, renders everywhere
+   - 2 Obsidian vault (graph view, Dataview queries) — uses `[[wikilinks]]`, great for graph view but won't render on GitLab/GitHub web UI
+6. **Remote URL** — [skip]  *(a private GitHub or GitLab repo for backup/sync. Leave blank to skip.)*
+7. **Auto-push after commit?** — [N]  *(only relevant if remote provided)*
+8. **Auto-pull at session start?** — [Y]  *(only relevant if remote provided)*
 
-Store all answers. Expand `~/wiki` or any `~` path to its absolute form using the HOME environment variable.
+Reply with your answers. Leave any blank to use the default.
+
+---
+
+Substitute `<git-user-name>` and `<wiki-name-slug>` with the actual values before sending. For question 2, compute the default slug from the default name "My Wiki" → `/Users/<HOME-value>/my-wiki`.
+
+**Do not proceed to Phase 2 until the user replies with their answers.**
+
+Once they reply, parse each answer:
+- Blank or missing → use the default
+- For question 2: if they give a `~` path, expand it using the HOME value from the shell command above
+- Store all values; you'll need them for every subsequent phase
 
 ---
 
@@ -113,7 +127,7 @@ Before the session ends, check `git status`. If there are uncommitted changes:
 
 ## Scope
 
-Write only to `wiki/pages/`, `wiki/index.md`, `wiki/log.md`, `wiki/tags.md`, `wiki/backlinks.md`.
+Write only to `wiki/pages/`, `wiki/index.md`, `wiki/tags.md`, `log.md` (root), `backlinks.md` (root).
 `sources/` is read-only — never modify or delete source files.
 ```
 
@@ -139,7 +153,7 @@ Substitute: WIKI_NAME from user answer.
 
 ---
 
-### `<wiki-path>/wiki/log.md`
+### `<wiki-path>/log.md`
 
 ```markdown
 # Log
@@ -160,7 +174,7 @@ Substitute: WIKI_NAME from user answer.
 
 ---
 
-### `<wiki-path>/wiki/backlinks.md`
+### `<wiki-path>/backlinks.md`
 
 ```markdown
 # Backlinks
@@ -191,9 +205,9 @@ Every page requires: `title`, `type`, `tags`, `created`, `updated`, `sources`
 See `tags.md` for the canonical list. Claude manages tags — do not edit manually.
 
 ## Indexes
-- `index.md` — master navigation index
-- `log.md` — append-only change history
-- `backlinks.md` — source → page inverse index
+- `wiki/index.md` — master navigation index
+- `log.md` — append-only change history (wiki root)
+- `backlinks.md` — source → page inverse index (wiki root)
 
 All indexes are maintained by Claude. Do not edit manually.
 ```

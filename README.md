@@ -9,6 +9,7 @@ Markdown, git-backed, accessible from any Claude Code session via MCP.
 ```
 /plugin marketplace add git@github.com:ts-eva/llm-wiki.git
 /plugin install llm-wiki@llm-wiki-marketplace
+/plugin reload
 /wiki-setup
 ```
 
@@ -82,13 +83,14 @@ Drop files into sources/          ← zero tokens, any time
 ~/wiki/
 ├── CLAUDE.md            # Claude's operating manual
 ├── config.yaml          # Your settings
+├── log.md               # Append-only change history
+├── backlinks.md         # Source → page inverse index
 ├── sources/             # Raw material — drop files here
 │   └── index.md         # Haiku-maintained tag index
 └── wiki/
     ├── index.md         # Master navigation index
-    ├── log.md           # Append-only change history
     ├── tags.md          # Canonical tag list
-    ├── backlinks.md     # Source → page inverse index
+    ├── schema.md        # Page type and frontmatter reference
     └── pages/           # Wiki pages
 ```
 

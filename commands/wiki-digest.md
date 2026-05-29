@@ -16,7 +16,7 @@ If $ARGUMENTS is empty, default to `this week`.
 
 1. Read `config.yaml` to get `mcp.path`
 2. Parse `$ARGUMENTS` into a start date and end date (inclusive)
-3. Read `wiki/log.md` — filter lines matching `## [YYYY-MM-DD]` within the date range
+3. Read `log.md` (root) — filter lines matching `## [YYYY-MM-DD]` within the date range
 4. If no entries found in range: "Nothing was added or changed in that period." Stop here.
 5. For each unique slug referenced, collect its one-line summary from `wiki/index.md`
 6. Invoke the `llm-wiki:wiki-analyst` agent (Haiku) with the filtered log entries and index summaries. Ask it to produce:

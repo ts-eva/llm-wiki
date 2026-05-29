@@ -1,6 +1,6 @@
 ---
 name: wiki-operations
-description: Rules for maintaining wiki/index.md, wiki/log.md, wiki/tags.md, wiki/backlinks.md, and all git operations
+description: Rules for maintaining wiki/index.md, wiki/tags.md, log.md, backlinks.md, and all git operations
 ---
 
 # Wiki Operations
@@ -15,8 +15,8 @@ Check availability first: `obsidian version` — if it returns cleanly, CLI is u
 |---|---|---|
 | Search pages | `obsidian search:context "query"` | Scan index.md then pages |
 | List tags | `obsidian tags` | Read `wiki/tags.md` |
-| Get backlinks | `obsidian backlinks "sources/file.md"` | Read `wiki/backlinks.md` |
-| Append to log | `obsidian append "wiki/log.md" "entry"` | `fs.appendFileSync` |
+| Get backlinks | `obsidian backlinks "sources/file.md"` | Read `backlinks.md` (root) |
+| Append to log | `obsidian append "log.md" "entry"` | `fs.appendFileSync` |
 | Update frontmatter | `obsidian property:set "pages/slug.md" key value` | Read + rewrite file |
 | Find orphaned pages | `obsidian orphans` | Manual scan |
 | Find unlinked pages | `obsidian unresolved` | Manual scan |
@@ -87,7 +87,7 @@ One entry per page, grouped by type. Format:
 
 Always keep entries sorted alphabetically within each group.
 
-## Maintaining wiki/log.md
+## Maintaining log.md (wiki root)
 
 Append-only. Never edit past entries. Format each entry as:
 
@@ -121,7 +121,7 @@ Rules:
 - Normalize on ingest: "ML" → `machine-learning`, "NLP" → `natural-language-processing`, "DB" → `database`
 - Never create near-duplicate tags (e.g. do not add `ml` if `machine-learning` exists)
 
-## Maintaining wiki/backlinks.md
+## Maintaining backlinks.md (wiki root)
 
 **Only maintained in `standard` mode.** Check `config.yaml` → `wiki.link_format`:
 - `standard`: maintain `backlinks.md` as described below — Claude owns this
@@ -145,8 +145,8 @@ Inverse index: source file → wiki pages that reference it. Update whenever a p
 When updating a page:
 1. Edit `wiki/pages/<slug>.md` — update content and the `updated` frontmatter field
 2. Update `wiki/index.md` if the summary changed
-3. Append to `wiki/log.md`: `## [YYYY-MM-DD] update | Title`
-4. Update `wiki/tags.md` and `wiki/backlinks.md` if tags or sources changed
+3. Append to `log.md` (root): `## [YYYY-MM-DD] update | Title`
+4. Update `wiki/tags.md` and `backlinks.md` (root) if tags or sources changed
 5. Commit: `git add . && git commit -m "wiki: update <title>"`
 
 ## Session end
@@ -158,7 +158,7 @@ Before the session ends:
 
 ## Scope guard
 
-- Write only to `wiki/pages/`, `wiki/index.md`, `wiki/log.md`, `wiki/tags.md`, `wiki/backlinks.md`
+- Write only to `wiki/pages/`, `wiki/index.md`, `wiki/tags.md`, `log.md` (root), `backlinks.md` (root)
 - `sources/` is read-only — never modify or delete source files
 - Never modify `config.yaml` unless the user explicitly asks
 - Never modify `CLAUDE.md` unless the user explicitly asks

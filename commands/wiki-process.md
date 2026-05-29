@@ -36,8 +36,8 @@ After wiki-tagger completes:
 Invoke the `llm-wiki:wiki-curator` agent once with all entries that have `wiki-pages: []` in `sources/index.md`. The agent will:
 - Read `sources/index.md` entries (never raw source files)
 - Create or update wiki pages in `wiki/pages/`
-- Update `wiki/index.md`, `wiki/log.md`, `wiki/tags.md`
-- Update `wiki/backlinks.md` (standard mode only)
+- Update `wiki/index.md`, `wiki/tags.md`, `log.md` (root)
+- Update `backlinks.md` (root, standard mode only)
 
 After wiki-curator completes:
 - Commit: `git add . && git commit -m "wiki: process batch [YYYY-MM-DD]"` (use today's date)
