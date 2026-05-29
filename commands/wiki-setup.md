@@ -4,52 +4,108 @@ Run the llm-wiki first-time setup wizard. This creates the user's personal wiki 
 
 ## Phase 1: Collect settings
 
-First, run this command to get the user's git name and HOME path:
-```
-git config --global user.name 2>/dev/null; echo "HOME=$HOME"
-```
-
-Then send **exactly this message** to the user and stop — do not proceed to Phase 2 until they reply:
-
----
-
+Display the header:
 ```
 ╔══════════════════════════════════════╗
 ║            llm-wiki setup            ║
 ╚══════════════════════════════════════╝
 ```
 
-Please answer each question (press Enter to accept the default in brackets):
-
-1. **Wiki name** — [My Wiki]
-2. **Wiki location** — [/Users/<you>/<wiki-name-slug>]  *(e.g. name "Dev Journal" → ~/dev-journal)*
-3. **Your name** — [<git-user-name>]
-4. **Focus / purpose** — [general personal and work notes]  *(helps Claude decide what's worth adding)*
-5. **Date format** — [1]
-   - 1 MM/DD/YYYY  *(e.g. 05/28/2026 — US)*
-   - 2 YYYY-MM-DD  *(e.g. 2026-05-28 — ISO)*
-   - 3 DD/MM/YYYY  *(e.g. 28/05/2026 — European)*
-6. **Editor / browse mode** — [1]
-   - 1 Standard (any IDE, Warp, VS Code, GitLab web) — uses `[Title](pages/slug.md)` links, renders everywhere
-   - 2 Obsidian vault (graph view, Dataview queries) — uses `[[wikilinks]]`, great for graph view but won't render on GitLab/GitHub web UI
-7. **Remote URL** — [skip]  *(a private GitHub or GitLab repo for backup/sync. Leave blank to skip.)*
-8. **Auto-push after commit?** — [N]  *(skip if no remote URL)*
-9. **Auto-pull at session start?** — [Y]  *(skip if no remote URL)*
-
-Reply with your answers. Leave any blank to use the default.
+Then collect settings using `AskUserQuestion` in three sequential rounds. Each round must complete (user responds) before proceeding to the next. First run:
+```
+git config --global user.name 2>/dev/null; echo "HOME=$HOME"
+```
+to get `GIT_NAME` and `HOME`.
 
 ---
 
-Substitute `<git-user-name>` and `<wiki-name-slug>` with the actual values before sending. For question 2, compute the default slug from the default name "My Wiki" → `/Users/<HOME-value>/my-wiki`.
+### Round 1 — Identity (call AskUserQuestion with these 2 questions)
 
-**Do not proceed to Phase 2 until the user replies with their answers.**
+**Q1 — Wiki name**
+- header: `Wiki name`
+- question: `What do you want to name your wiki?`
+- options:
+  - label: `My Wiki`, description: `Default — good for a general personal wiki`
+  - label: `Work Notes`, description: `If this is primarily for work`
 
-Once they reply, parse each answer:
-- Blank or missing → use the default
-- For question 2: if they give a `~` path, expand it using the HOME value from the shell command above
-- For question 5: `1` → `MM/DD/YYYY`, `2` → `YYYY-MM-DD`, `3` → `DD/MM/YYYY`
-- For questions 8 and 9: if question 7 was left blank (no remote), force both to `false` regardless of any answer given
-- Store all values; you'll need them for every subsequent phase
+**Q2 — Your name**
+- header: `Your name`
+- question: `What name should appear as the wiki author?`
+- options:
+  - label: `<GIT_NAME>`, description: `From your git config`
+  - label: `Anonymous`, description: `Leave author blank`
+
+After Round 1: compute the wiki name slug (lowercase, spaces → hyphens) and the default location `<HOME>/<slug>`.
+
+---
+
+### Round 2 — Setup (call AskUserQuestion with these 3 questions)
+
+**Q3 — Wiki location**
+- header: `Wiki location`
+- question: `Where should the wiki be created?`
+- options:
+  - label: `<HOME>/<slug>` (computed from Q1 answer), description: `Default location`
+  - label: `<HOME>/wiki`, description: `Generic ~/wiki path`
+
+**Q4 — Focus / purpose**
+- header: `Focus`
+- question: `What is this wiki for? (helps Claude decide what's worth adding)`
+- options:
+  - label: `General personal and work notes`, description: `Default`
+  - label: `Work projects and technical notes`, description: `Engineering / product focus`
+
+**Q5 — Date format**
+- header: `Date format`
+- question: `How should dates be displayed in wiki pages?`
+- options:
+  - label: `MM/DD/YYYY`, description: `e.g. 05/28/2026 — US format`
+  - label: `YYYY-MM-DD`, description: `e.g. 2026-05-28 — ISO format`
+  - label: `DD/MM/YYYY`, description: `e.g. 28/05/2026 — European format`
+
+---
+
+### Round 3 — Editor and sync (call AskUserQuestion with these 2 questions)
+
+**Q6 — Editor / browse mode**
+- header: `Editor mode`
+- question: `How will you read and browse your wiki?`
+- options:
+  - label: `Standard`, description: `[Title](pages/slug.md) links — renders in any IDE, Warp, VS Code, GitLab web`
+  - label: `Obsidian`, description: `[[wikilinks]] — graph view and Dataview queries, but won't render on GitLab/GitHub web UI`
+
+**Q7 — Remote URL**
+- header: `Remote URL`
+- question: `Add a remote git repo for backup/sync? (private GitHub or GitLab repo)`
+- options:
+  - label: `Skip — local only`, description: `No remote; wiki stays on this machine`
+  - label: `I have a remote repo URL`, description: `You'll enter the URL via Other`
+
+If Q7 = "I have a remote repo URL" or "Other" (user typed a URL): call `AskUserQuestion` with two more questions:
+
+**Q8 — Auto-push**
+- header: `Auto-push`
+- question: `Automatically push to remote after each commit?`
+- options:
+  - label: `No`, description: `Push manually with /wiki-commit`
+  - label: `Yes`, description: `Push after every wiki commit`
+
+**Q9 — Auto-pull**
+- header: `Auto-pull`
+- question: `Automatically pull from remote at session start?`
+- options:
+  - label: `Yes`, description: `Always pull latest on session open`
+  - label: `No`, description: `Pull manually`
+
+If Q7 = "Skip": set AUTO_PUSH = `false`, AUTO_PULL = `false` — do not ask Q8/Q9.
+
+---
+
+### After all rounds
+
+Store all answers. If the user selected "Other" for any question, use whatever text they typed.
+- Q3 location: expand any `~` to the HOME value from the shell command
+- Q5 date format: use the label value directly (`MM/DD/YYYY`, `YYYY-MM-DD`, or `DD/MM/YYYY`)
 
 ---
 
