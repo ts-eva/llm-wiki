@@ -22,15 +22,19 @@ Then send **exactly this message** to the user and stop — do not proceed to Ph
 Please answer each question (press Enter to accept the default in brackets):
 
 1. **Wiki name** — [My Wiki]
-2. **Wiki location** — [/Users/<you>/<wiki-name-slug>]  *(e.g. name "tsm" → ~/tsm)*
+2. **Wiki location** — [/Users/<you>/<wiki-name-slug>]  *(e.g. name "Dev Journal" → ~/dev-journal)*
 3. **Your name** — [<git-user-name>]
 4. **Focus / purpose** — [general personal and work notes]  *(helps Claude decide what's worth adding)*
-5. **Editor / browse mode** — [1]
+5. **Date format** — [1]
+   - 1 MM/DD/YYYY  *(e.g. 05/28/2026 — US)*
+   - 2 YYYY-MM-DD  *(e.g. 2026-05-28 — ISO)*
+   - 3 DD/MM/YYYY  *(e.g. 28/05/2026 — European)*
+6. **Editor / browse mode** — [1]
    - 1 Standard (any IDE, Warp, VS Code, GitLab web) — uses `[Title](pages/slug.md)` links, renders everywhere
    - 2 Obsidian vault (graph view, Dataview queries) — uses `[[wikilinks]]`, great for graph view but won't render on GitLab/GitHub web UI
-6. **Remote URL** — [skip]  *(a private GitHub or GitLab repo for backup/sync. Leave blank to skip.)*
-7. **Auto-push after commit?** — [N]  *(only relevant if remote provided)*
-8. **Auto-pull at session start?** — [Y]  *(only relevant if remote provided)*
+7. **Remote URL** — [skip]  *(a private GitHub or GitLab repo for backup/sync. Leave blank to skip.)*
+8. **Auto-push after commit?** — [N]  *(skip if no remote URL)*
+9. **Auto-pull at session start?** — [Y]  *(skip if no remote URL)*
 
 Reply with your answers. Leave any blank to use the default.
 
@@ -43,6 +47,8 @@ Substitute `<git-user-name>` and `<wiki-name-slug>` with the actual values befor
 Once they reply, parse each answer:
 - Blank or missing → use the default
 - For question 2: if they give a `~` path, expand it using the HOME value from the shell command above
+- For question 5: `1` → `MM/DD/YYYY`, `2` → `YYYY-MM-DD`, `3` → `DD/MM/YYYY`
+- For questions 8 and 9: if question 7 was left blank (no remote), force both to `false` regardless of any answer given
 - Store all values; you'll need them for every subsequent phase
 
 ---
@@ -80,7 +86,7 @@ wiki:
   focus: "<FOCUS>"
   author: "<AUTHOR>"
   link_format: <LINK_FORMAT>    # standard | obsidian
-  date_format: "MM/DD/YYYY"     # date display format — change to YYYY-MM-DD for ISO, DD/MM/YYYY for European
+  date_format: "<DATE_FORMAT>"   # MM/DD/YYYY | YYYY-MM-DD | DD/MM/YYYY
 
 git:
   auto_commit: true
@@ -91,7 +97,7 @@ mcp:
   path: "<WIKI_PATH_ABSOLUTE>"
 ```
 
-Substitute: WIKI_NAME, FOCUS, AUTHOR from user answers. WIKI_PATH_ABSOLUTE as the resolved absolute path.
+Substitute: WIKI_NAME, FOCUS, AUTHOR, DATE_FORMAT from user answers. WIKI_PATH_ABSOLUTE as the resolved absolute path.
 - If no remote URL was provided: AUTO_PUSH = `false`, AUTO_PULL = `false`
 - If remote URL was provided: AUTO_PUSH and AUTO_PULL from user answers (`true` or `false`)
 
