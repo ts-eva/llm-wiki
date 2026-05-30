@@ -1,4 +1,4 @@
-Save content to sources/ for later processing. No pipeline runs — use /wiki-process when ready to tag and organize.
+Save content to sources/ for later processing. No pipeline runs — use /llm-wiki:wiki-process when ready to tag and organize.
 
 Content: $ARGUMENTS
 
@@ -59,4 +59,4 @@ Write the file to `sources/<slug>-<YYYY-MM-DD>.md`, then:
 git -C "<wiki-path>" add sources/<slug>-<YYYY-MM-DD>.md && git -C "<wiki-path>" commit -m "wiki: add source <slug>"
 ```
 
-Tell the user: "Saved to sources/<slug>-<YYYY-MM-DD>.md. Run /wiki-process when ready."
+Tell the user: "Saved to sources/<slug>-<YYYY-MM-DD>.md. Run /llm-wiki:wiki-process when ready."

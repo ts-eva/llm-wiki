@@ -16,10 +16,10 @@ Check sources/ for new untagged files and run wiki-tagger on them. Designed to b
 To run this daily, add a cron in any Claude Code session:
 
 ```
-/cron "daily wiki autotag" "0 9 * * *" "run /wiki-autotag in my wiki repo at <wiki-path>"
+/cron "daily wiki autotag" "0 9 * * *" "run /llm-wiki:wiki-autotag in my wiki repo at <wiki-path>"
 ```
 
 Or set it up manually via the Claude Code cron system with the prompt:
 `Read config.yaml at <wiki-path>, then run the llm-wiki:wiki-autotag command to tag any new files in sources/`
 
-The cron only runs wiki-tagger (Haiku, cheap). Organization into wiki pages still requires /wiki-process.
+The cron only runs wiki-tagger (Haiku, cheap). Organization into wiki pages still requires /llm-wiki:wiki-process.

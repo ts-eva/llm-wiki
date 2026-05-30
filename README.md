@@ -13,7 +13,7 @@ Markdown, git-backed, accessible from any Claude Code session via MCP.
 /llm-wiki:wiki-setup
 ```
 
-`/llm-wiki:wiki-setup` runs an interactive wizard: creates your wiki repo (default `~/wiki`), asks for name/focus/remote, initializes git, and **automatically registers the MCP server** so wiki tools are available in every Claude Code session.
+`/llm-wiki:wiki-setup` runs an interactive wizard: creates your wiki repo (defaults to current directory), asks for name/focus/remote/date format, initializes git, and **automatically registers the MCP server** so wiki tools are available in every Claude Code session.
 
 **Manual MCP registration** (if you need to re-run or the wizard failed):
 ```bash
@@ -25,18 +25,17 @@ find "$HOME/.claude" -type d -name "llm-wiki" 2>/dev/null | head -1
 ```
 
 **Requirement**: GitHub SSH key with access to `ts-eva/llm-wiki`.
-```
 
 ## Daily workflow
 
 ```
-Drop files into sources/                    ← zero tokens, any time
-/llm-wiki:wiki-add interesting article url ← save a URL or paste text
-/llm-wiki:wiki-session                     ← capture today's Claude session
+Drop files into sources/                     ← zero tokens, any time
+/llm-wiki:wiki-add interesting article url   ← save a URL or paste text
+/llm-wiki:wiki-session                       ← capture today's Claude session
 
-/llm-wiki:wiki-process                     ← Haiku tags everything, Sonnet organizes
-/llm-wiki:wiki-ask how does X work?        ← synthesized answer from your wiki
-/llm-wiki:wiki-digest this week            ← what did I learn?
+/llm-wiki:wiki-process                       ← Haiku tags everything, Sonnet organizes
+/llm-wiki:wiki-ask how does X work?          ← synthesized answer from your wiki
+/llm-wiki:wiki-digest this week              ← what did I learn?
 ```
 
 ## Commands
@@ -75,16 +74,17 @@ Drop files into sources/                    ← zero tokens, any time
 
 **Ambient** — MCP tools available in any Claude session. Drop a note, search, ask a question, save something interesting — without leaving your current project.
 
-**Direct** — `cd ~/wiki && claude`. CLAUDE.md loads automatically. Best for bulk ingestion, restructuring, or anything that needs the full wiki in context.
+**Direct** — `cd <wiki-path> && claude`. CLAUDE.md loads automatically. Best for bulk ingestion, restructuring, or anything that needs the full wiki in context.
 
 ## Wiki structure
 
 ```
-~/wiki/
+<wiki-path>/
 ├── CLAUDE.md            # Claude's operating manual
 ├── config.yaml          # Your settings
 ├── log.md               # Append-only change history
-├── backlinks.md         # Source → page inverse index
+├── backlinks.md         # Source → page inverse index (standard mode)
+├── .obsidian/           # Obsidian config (Obsidian mode only)
 ├── sources/             # Raw material — drop files here
 │   └── index.md         # Haiku-maintained tag index
 └── wiki/
@@ -102,12 +102,12 @@ wiki:
   focus: "general personal and work notes"
   author: "Your Name"
   link_format: standard       # standard | obsidian
-  date_format: "MM/DD/YYYY"   # date display — YYYY-MM-DD for ISO
+  date_format: "MM/DD/YYYY"   # date display — YYYY-MM-DD for ISO, DD/MM/YYYY for European
 
 git:
   auto_commit: true    # commit before session ends
   auto_push: false     # push after commit (requires remote)
-  auto_pull: true      # pull at session start (requires remote)
+  auto_pull: false     # pull at session start (requires remote)
 
 mcp:
   path: "/absolute/path/to/wiki"
@@ -133,4 +133,8 @@ Haiku tags new sources each morning. Run `/llm-wiki:wiki-process` when you're re
 
 ## Obsidian support
 
-Run `/llm-wiki:wiki-setup` and choose Obsidian mode to get `[[wikilinks]]`, graph view, and Dataview support. Switch any time with `/llm-wiki:wiki-convert`. Standard mode renders everywhere (GitHub, VS Code, Warp).
+Requires [Obsidian](https://obsidian.md) installed. Run `/llm-wiki:wiki-setup` and choose Obsidian mode to get `[[wikilinks]]`, graph view, and Dataview support. Switch any time with `/llm-wiki:wiki-convert`. Standard mode renders everywhere (GitHub, VS Code, Warp).
+
+Obsidian does not need to be open for any wiki commands to work — all commands use Claude and file I/O directly. Open Obsidian when you want to browse the graph, run Dataview queries, or read notes visually.
+
+In Obsidian mode the vault root is the wiki folder itself (not a subfolder), so `sources/` files appear in the graph alongside wiki pages — you can see which source files generated which pages. Wiki pages link to sources via `[[sources/filename]]` wikilinks that Obsidian renders as graph edges.

@@ -1,6 +1,6 @@
 Batch-process all new files in sources/ — tag with Haiku, organize into wiki pages with Sonnet, commit everything.
 
-Use this at the end of the day (or whenever you're ready) after dropping files into sources/. One pipeline run is cheaper than calling /wiki-add for each file individually: prompt caches load once, Sonnet sees the full picture for better organization and tag consistency.
+Use this at the end of the day (or whenever you're ready) after dropping files into sources/. One pipeline run is cheaper than calling /llm-wiki:wiki-add for each file individually: prompt caches load once, Sonnet sees the full picture for better organization and tag consistency.
 
 ## Steps
 
@@ -55,4 +55,4 @@ Pipeline complete.
 ```
 
 If in Obsidian mode and Obsidian is not already open, offer: "Open your wiki in Obsidian? (y/N)"
-If user says yes, run: `open "obsidian://open?vault=$(basename '<wiki-path>/wiki')"`
+If user says yes, run: `open -a Obsidian "<wiki-path>"`

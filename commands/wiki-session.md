@@ -43,4 +43,4 @@ Then:
 git -C "<wiki-path>" add sources/session-<slug>-<YYYY-MM-DD>.md && git -C "<wiki-path>" commit -m "wiki: capture session <slug>"
 ```
 
-Tell the user: "Session saved to sources/session-<slug>-<YYYY-MM-DD>.md. Run /wiki-process when you're ready to organize it into wiki pages."
+Tell the user: "Session saved to sources/session-<slug>-<YYYY-MM-DD>.md. Run /llm-wiki:wiki-process when you're ready to organize it into wiki pages."

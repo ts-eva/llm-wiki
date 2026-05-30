@@ -56,22 +56,32 @@ function buildTitleMap() {
 // --- Conversion functions ---
 
 function toObsidian(content) {
-  // Replace [Title](pages/slug.md) → [[slug]] (drop display title — Obsidian shows it from page title)
-  // Keep [[wikilinks]] already present untouched
+  // Replace [Title](pages/slug.md) → [[slug]]
   let result = content.replace(
     /\[([^\]]+)\]\(pages\/([^)]+)\.md\)/g,
     (_, _title, slug) => `[[${slug}]]`
   );
 
-  // Remove ## Sources section (Obsidian handles backlinks natively)
-  result = result.replace(/\n## Sources\n[\s\S]*?(?=\n## |\n---|\n#[^#]|$)/g, "\n");
+  // Convert ## Sources links to [[sources/filename]] wikilinks so Obsidian
+  // graph shows source→page connections instead of losing them
+  result = result.replace(
+    /\[([^\]]+)\]\(\.\.\/sources\/([^)]+)\)/g,
+    (_, _title, filename) => `[[sources/${filename}]]`
+  );
 
   return result;
 }
 
 function toStandard(content, titleMap) {
-  // Replace [[slug|Display]] → [Display](pages/slug.md)
+  // Handle source file wikilinks first — before general slug replacement
+  // [[sources/filename.ext]] → [filename.ext](../sources/filename.ext)
   let result = content.replace(
+    /\[\[sources\/([^\]]+)\]\]/g,
+    (_, filename) => `[${filename}](../sources/${filename})`
+  );
+
+  // Replace [[slug|Display]] → [Display](pages/slug.md)
+  result = result.replace(
     /\[\[([^\]|]+)\|([^\]]+)\]\]/g,
     (_, slug, display) => `[${display}](pages/${slug}.md)`
   );
@@ -139,7 +149,11 @@ for (const { slug, fullPath } of pageFiles()) {
     body = toObsidian(body);
   } else {
     body = toStandard(body, titleMap);
-    body = rebuildSourcesSection(body, parsed.data.sources || []);
+    // Only rebuild Sources section if toStandard didn't already restore it
+    // (i.e. the page was created in Obsidian without [[sources/]] links)
+    if (!body.includes("## Sources")) {
+      body = rebuildSourcesSection(body, parsed.data.sources || []);
+    }
   }
 
   // Reconstruct full file (frontmatter unchanged)
@@ -163,7 +177,7 @@ if (TARGET === "obsidian") {
 }
 
 // Handle .obsidian/ folder
-const obsidianDir = path.join(WIKI_DIR, ".obsidian");
+const obsidianDir = path.join(WIKI_PATH, ".obsidian");
 if (TARGET === "standard" && fs.existsSync(obsidianDir)) {
   fs.rmSync(obsidianDir, { recursive: true });
   console.log("  ✓ removed .obsidian/ folder");

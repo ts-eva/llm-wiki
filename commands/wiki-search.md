@@ -11,4 +11,4 @@ If $ARGUMENTS is empty, ask the user: "What are you looking for?"
    **[Title](pages/slug.md)** — one-line summary · matched in: title | tags | content
 5. If no matches: say so clearly and suggest related tags from `wiki/tags.md`
 
-This command returns links. For synthesized answers across pages, use `/wiki-ask`.
+This command returns links. For synthesized answers across pages, use `/llm-wiki:wiki-ask`.

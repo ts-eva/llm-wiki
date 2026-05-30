@@ -105,5 +105,5 @@ git:
   auto_pull: true             # pull at session start (only if remote is set)
 
 mcp:
-  path: "/absolute/path/to/wiki"   # set by /wiki-setup, do not edit manually
+  path: "/absolute/path/to/wiki"   # set by /llm-wiki:wiki-setup, do not edit manually
 ```

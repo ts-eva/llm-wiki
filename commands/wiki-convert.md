@@ -13,7 +13,7 @@ If $ARGUMENTS is empty, ask the user:
 - Converts all `[Title](pages/slug.md)` links to `[[slug]]`
 - Removes `## Sources` sections (Obsidian tracks backlinks natively)
 - Deletes `backlinks.md` (root)
-- Scaffolds `wiki/.obsidian/` if not already present
+- Scaffolds `.obsidian/` at wiki root if not already present
 - Updates `config.yaml` → `link_format: obsidian`
 
 **Obsidian → Standard:**
@@ -21,7 +21,7 @@ If $ARGUMENTS is empty, ask the user:
 - Converts `[[slug|Display]]` → `[Display](pages/slug.md)`
 - Rebuilds `## Sources` sections from each page's `sources` frontmatter
 - Rebuilds `backlinks.md` (root) from scratch
-- Removes `wiki/.obsidian/` folder
+- Removes `.obsidian/` folder from wiki root
 - Updates `config.yaml` → `link_format: standard`
 
 ## Steps
@@ -29,7 +29,7 @@ If $ARGUMENTS is empty, ask the user:
 1. Read `config.yaml` to get the wiki path (`mcp.path`)
 2. Confirm the conversion direction with the user before proceeding
 3. Run: `node <plugin-path>/server/convert.js "<wiki-path>" <target-format>`
-   - Find the plugin path the same way as /wiki-setup (search ~/.claude for llm-wiki directory)
+   - Find the plugin path the same way as /llm-wiki:wiki-setup (search ~/.claude for llm-wiki directory)
 4. Stage and commit: `git -C "<wiki-path>" add . && git -C "<wiki-path>" commit -m "wiki: convert to <target-format> format"`
 5. Report how many pages were converted and any next steps
 

@@ -1,4 +1,4 @@
-Synthesize an answer from your wiki. Different from /wiki-search (which returns links) — this reads relevant pages and answers directly.
+Synthesize an answer from your wiki. Different from /llm-wiki:wiki-search (which returns links) — this reads relevant pages and answers directly.
 
 Question: $ARGUMENTS
 
@@ -8,7 +8,7 @@ If $ARGUMENTS is empty, ask the user: "What would you like to know from your wik
 
 1. Read `config.yaml` to get `mcp.path`
 2. Read `wiki/index.md` — scan titles and one-line summaries to identify pages relevant to the question (minimal tokens)
-3. Select the 2–5 most relevant page slugs. If none seem relevant, say: "I don't have anything on that yet. Add sources with /wiki-add and process them with /wiki-process."
+3. Select the 2–5 most relevant page slugs. If none seem relevant, say: "I don't have anything on that yet. Add sources with /llm-wiki:wiki-add and process them with /llm-wiki:wiki-process."
 4. Read each selected page from `wiki/pages/<slug>.md`
 5. Answer the question directly and concisely, drawing from those pages
 6. End with: "Sources: [Page Title](pages/slug.md), ..." listing the pages used

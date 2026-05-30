@@ -35,14 +35,16 @@ Store as WIKI_NAME. Compute SLUG = lowercased, spaces → hyphens (e.g. "Dev Jou
 
 **Q2 — Wiki location**
 
+First run `pwd` to get the current working directory (CWD).
+
 `AskUserQuestion`:
 - header: `Wiki location`
 - question: `Where should the wiki be created?`
 - options:
-  - label: `<HOME>/<SLUG>` *(fill in computed value, e.g. ~/dev-journal)*, description: `Default`
-  - label: `<HOME>/wiki`, description: `Generic ~/wiki`
+  - label: `<CWD>/<SLUG>` *(fill in: current directory + slug, e.g. /Users/evali/Documents/tsm)*, description: `Current directory — default`
+  - label: `<HOME>/<SLUG>` *(fill in: home directory + slug)*, description: `Home directory`
 
-Store as WIKI_PATH (option 1 or blank → computed default). Expand any `~` to HOME.
+Store as WIKI_PATH (option 1 or blank → CWD/SLUG). Expand any `~` to HOME.
 
 ---
 
@@ -93,9 +95,11 @@ Store as DATE_FORMAT (use label value directly).
 - question: `How will you read and browse your wiki?`
 - options:
   - label: `Standard`, description: `[Title](pages/slug.md) links — renders in any IDE, Warp, VS Code, GitLab/GitHub`
-  - label: `Obsidian`, description: `[[wikilinks]] — graph view and Dataview (won't render on GitLab/GitHub web UI)`
+  - label: `Obsidian`, description: `[[wikilinks]] — graph view and Dataview (won't render on GitLab/GitHub web UI). Requires Obsidian installed: https://obsidian.md`
 
 Store as LINK_FORMAT: `Standard`→`standard`, `Obsidian`→`obsidian`.
+
+If the user picks Obsidian and doesn't have it installed, remind them: "Download Obsidian from https://obsidian.md — you don't need it open for wiki commands to work, but you'll need it to use graph view and Dataview."
 
 ---
 
@@ -142,7 +146,7 @@ Store as AUTO_PULL: `Yes`→`true`, `No`→`false`.
 ## Phase 2: Check for existing wiki
 
 If the wiki location directory already exists and contains a `config.yaml`, stop and tell the user:
-"A wiki already exists at <path>. Run /wiki-setup again only to create a new wiki at a different location."
+"A wiki already exists at <path>. Run /llm-wiki:wiki-setup again only to create a new wiki at a different location."
 
 ---
 
@@ -342,23 +346,25 @@ Empty file.
 
 ### If LINK_FORMAT is `obsidian` — scaffold `.obsidian/` folder
 
-Create `<wiki-path>/wiki/.obsidian/app.json`:
+The vault root is `<wiki-path>` (not `<wiki-path>/wiki`) so that source files appear in the graph alongside wiki pages, showing the connections between raw inputs and organized knowledge.
+
+Create `<wiki-path>/.obsidian/app.json`:
 
 ```json
 {
   "newLinkFormat": "shortest",
   "useMarkdownLinks": false,
-  "attachmentFolderPath": "../../sources"
+  "attachmentFolderPath": "sources"
 }
 ```
 
-Create `<wiki-path>/wiki/.obsidian/community-plugins.json`:
+Create `<wiki-path>/.obsidian/community-plugins.json`:
 
 ```json
 ["dataview"]
 ```
 
-Create `<wiki-path>/wiki/.obsidian/plugins/dataview/data.json`:
+Create `<wiki-path>/.obsidian/plugins/dataview/data.json`:
 
 ```json
 {
@@ -372,7 +378,7 @@ Create `<wiki-path>/wiki/.obsidian/plugins/dataview/data.json`:
 ```
 
 Tell the user:
-"Obsidian vault scaffolded at <wiki-path>/wiki/. Open that folder in Obsidian as your vault. Install the Dataview community plugin for query support. Links will use [[wikilinks]] format."
+"Obsidian vault scaffolded at <wiki-path>/. Open that folder in Obsidian as your vault. Install the Dataview community plugin for query support. Links will use [[wikilinks]] format."
 
 Also tell the user:
 "Note: [[wikilinks]] won't render on GitLab/GitHub web UI — they still work as links but show as plain text in the browser. All content remains fully readable in any editor."
@@ -465,15 +471,10 @@ If push fails (e.g. repo doesn't exist yet), tell the user to create the remote 
 
 ## Phase 8: Open Obsidian (Obsidian mode only)
 
-If LINK_FORMAT is `obsidian`, open the vault automatically:
+If LINK_FORMAT is `obsidian`, open the vault by path (the vault is new and not yet registered with Obsidian, so the URL scheme won't work):
 
 ```bash
-open "obsidian://open?vault=$(basename '<wiki-path>/wiki')"
-```
-
-If that fails (vault not yet known to Obsidian), fall back to:
-```bash
-open -a Obsidian "<wiki-path>/wiki"
+open -a Obsidian "<wiki-path>"
 ```
 
 Tell the user: "Opening your wiki vault in Obsidian. If it prompts you to trust the vault, click 'Trust and Enable Plugins'."
@@ -492,14 +493,14 @@ Print a summary:
 
 Workflow:
   Collect notes anytime → drop files in sources/ (zero tokens)
-  Run /wiki-process when ready → Haiku tags, Sonnet organizes, all at once
-  Batching saves tokens: one pipeline run beats many individual /wiki-add calls
+  Run /llm-wiki:wiki-process when ready → Haiku tags, Sonnet organizes, all at once
+  Batching saves tokens: one pipeline run beats many individual /llm-wiki:wiki-add calls
 
 Commands:
-  /wiki-add      — add a single note from any Claude session
-  /wiki-process  — batch process everything new in sources/ at once
-  /wiki-search   — search your wiki
-  /wiki-open     — open your wiki in Obsidian (Obsidian mode only)
-  /wiki-commit   — manual git commit
-  /wiki-convert  — switch between standard and Obsidian format
+  /llm-wiki:wiki-add      — add a single note from any Claude session
+  /llm-wiki:wiki-process  — batch process everything new in sources/ at once
+  /llm-wiki:wiki-search   — search your wiki
+  /llm-wiki:wiki-open     — open your wiki in Obsidian (Obsidian mode only)
+  /llm-wiki:wiki-commit   — manual git commit
+  /llm-wiki:wiki-convert  — switch between standard and Obsidian format
 ```
