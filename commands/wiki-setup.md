@@ -435,7 +435,28 @@ Steps:
 
 ### If USE_AS_MEMORY is `true` — write memory block to `~/.claude/CLAUDE.md`
 
-Read `~/.claude/CLAUDE.md` if it exists (create it if not). Append the following block, substituting WIKI_PATH and WIKI_NAME:
+Read `~/.claude/CLAUDE.md` if it exists.
+
+Scan for existing `## Wiki Memory` blocks. Each block starts with `## Wiki Memory (` and contains a wiki path.
+
+**Case 1 — No existing memory blocks**: append the block below and proceed.
+
+**Case 2 — This vault's block already exists** (same WIKI_PATH found): do nothing, tell the user "Memory already configured for this wiki."
+
+**Case 3 — A different vault's memory block exists**: show the user what's already configured, then call `AskUserQuestion`:
+- header: `Memory conflict`
+- question: `~/.claude/CLAUDE.md already has a wiki memory block for <existing wiki name>. What would you like to do?`
+- options:
+  - label: `Use this vault instead`, description: `Replace the existing memory block with this wiki`
+  - label: `Use both vaults`, description: `Claude will search both wikis for context at session start`
+  - label: `Keep existing setup`, description: `Leave ~/.claude/CLAUDE.md unchanged — skip memory for this vault`
+
+Act on the answer:
+- "Use this vault instead" → replace the existing `## Wiki Memory (...)` block with the new one
+- "Use both vaults" → append the new block alongside the existing one
+- "Keep existing setup" → skip, do not modify `~/.claude/CLAUDE.md`
+
+The memory block template (substitute WIKI_PATH and WIKI_NAME):
 
 ```markdown
 ## Wiki Memory (<WIKI_NAME>)
@@ -448,8 +469,6 @@ Use it as persistent memory:
 - **Worth keeping**: call `save_source` to capture anything durable — decisions, learnings, context
 - **End of meaningful session**: suggest running `/llm-wiki:wiki-session` to capture the session for later processing
 ```
-
-Do not duplicate this block if it already exists in `~/.claude/CLAUDE.md`.
 
 ---
 
