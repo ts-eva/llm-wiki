@@ -76,6 +76,8 @@ Drop files into sources/                     ← zero tokens, any time
 
 **Direct** — `cd <wiki-path> && claude`. CLAUDE.md loads automatically. Best for bulk ingestion, restructuring, or anything that needs the full wiki in context.
 
+**As Claude memory** — opt-in during `/llm-wiki:wiki-setup`. Writes a block to `~/.claude/CLAUDE.md` so Claude searches the wiki for context at the start of every session and saves learnings back. Session captures via `/llm-wiki:wiki-session` feed into the pipeline, which organises them into the right wiki pages — closing the loop.
+
 ## Wiki structure
 
 ```

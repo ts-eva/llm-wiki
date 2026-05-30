@@ -143,6 +143,19 @@ Store as AUTO_PULL: `Yes`→`true`, `No`→`false`.
 
 ---
 
+**Q10 — Use as Claude memory**
+
+`AskUserQuestion`:
+- header: `Claude memory`
+- question: `Use this wiki as Claude's persistent memory across all sessions?`
+- options:
+  - label: `Yes`, description: `Claude will search the wiki for context at session start and save learnings — works in any Claude Code session via MCP`
+  - label: `No`, description: `Wiki stays as a manual knowledge base — you control what goes in`
+
+Store as USE_AS_MEMORY: `Yes`→`true`, `No`→`false`.
+
+---
+
 ## Phase 2: Check for existing wiki
 
 If the wiki location directory already exists and contains a `config.yaml`, stop and tell the user:
@@ -420,6 +433,26 @@ Steps:
 
 ---
 
+### If USE_AS_MEMORY is `true` — write memory block to `~/.claude/CLAUDE.md`
+
+Read `~/.claude/CLAUDE.md` if it exists (create it if not). Append the following block, substituting WIKI_PATH and WIKI_NAME:
+
+```markdown
+## Wiki Memory (<WIKI_NAME>)
+
+You have a personal wiki at `<WIKI_PATH>` accessible via the llm-wiki MCP server in every Claude Code session.
+
+Use it as persistent memory:
+- **Session start**: call `search_wiki` for topics relevant to the current project or conversation
+- **Recent activity**: call `get_recent(7)` to recall what was worked on recently
+- **Worth keeping**: call `save_source` to capture anything durable — decisions, learnings, context
+- **End of meaningful session**: suggest running `/llm-wiki:wiki-session` to capture the session for later processing
+```
+
+Do not duplicate this block if it already exists in `~/.claude/CLAUDE.md`.
+
+---
+
 ## Phase 5: Initialize git
 
 Run in `<wiki-path>`:
@@ -490,6 +523,7 @@ Print a summary:
 ✓ MCP server registered (or instructions provided)
 <if remote> ✓ Remote configured and pushed to <url>
 <if obsidian> ✓ Obsidian vault opened
+<if memory> ✓ Claude memory enabled — wiki context available in every session
 
 Workflow:
   Collect notes anytime → drop files in sources/ (zero tokens)
