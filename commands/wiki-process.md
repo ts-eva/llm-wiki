@@ -12,8 +12,9 @@ Use this at the end of the day (or whenever you're ready) after dropping files i
 4. Build two lists:
    - **Untagged**: files in `sources/` not yet in `sources/index.md`
    - **Unorganized**: entries in `sources/index.md` with `wiki-pages: []`
-5. If both lists are empty, tell the user: "Nothing new to process — wiki is up to date." Stop here.
-6. Report what was found:
+5. Filter ignored files: for each file in the Untagged list, read its frontmatter. If `ignore: true` is set, remove it from the Untagged list (do not tag or organize it — leave it untouched).
+6. If both lists are empty, tell the user: "Nothing new to process — wiki is up to date." Stop here.
+7. Report what was found:
    ```
    Found X new file(s) to tag, Y entry/entries ready to organize.
    Starting pipeline…
