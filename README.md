@@ -6,12 +6,20 @@ Markdown, git-backed, accessible from any Claude Code session via MCP.
 
 ## Install
 
-Run these one at a time, in order — each step depends on the previous one finishing (the plugin must be installed before `/reload-plugins` picks it up, and `/reload-plugins` must complete before `/llm-wiki:wiki-setup` exists as a command):
+Run these one at a time, in order — each depends on the previous one finishing (the plugin must be installed before `/reload-plugins` picks it up, and `/reload-plugins` must complete before `/llm-wiki:wiki-setup` exists as a command). Don't paste them as a block.
 
-1. `/plugin marketplace add git@github.com:ts-eva/llm-wiki.git`
-2. `/plugin install llm-wiki@llm-wiki-marketplace`
-3. `/reload-plugins`
-4. `/llm-wiki:wiki-setup`
+```
+/plugin marketplace add git@github.com:ts-eva/llm-wiki.git
+```
+```
+/plugin install llm-wiki@llm-wiki-marketplace
+```
+```
+/reload-plugins
+```
+```
+/llm-wiki:wiki-setup
+```
 
 `/llm-wiki:wiki-setup` runs an interactive wizard: creates your wiki repo (defaults to current directory), asks for name/focus/remote/date format, initializes git, and **automatically registers the MCP server** (user-scoped, pointing at the wiki path you chose) so wiki tools are available in every Claude Code session.
 

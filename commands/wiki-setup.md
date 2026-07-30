@@ -498,12 +498,12 @@ git commit -m "wiki: init"
    - Run `npm install` inside `<plugin-dir>/server/`
    - Register the MCP server:
      ```
-     claude mcp add llm-wiki --env WIKI_PATH="<WIKI_PATH_ABSOLUTE>" -- node "<plugin-dir>/server/index.js"
+     claude mcp add llm-wiki --scope user --env WIKI_PATH="<WIKI_PATH_ABSOLUTE>" -- node "<plugin-dir>/server/index.js"
      ```
 
 3. If the plugin directory is not found, tell the user:
    "Could not locate the llm-wiki plugin directory automatically. Please run:
-   `claude mcp add llm-wiki --env WIKI_PATH=<wiki-path> -- node <path-to-plugin>/server/index.js`
+   `claude mcp add llm-wiki --scope user --env WIKI_PATH=<wiki-path> -- node <path-to-plugin>/server/index.js`
    replacing <path-to-plugin> with the directory where the llm-wiki plugin is installed."
 
 ---
