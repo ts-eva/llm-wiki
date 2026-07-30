@@ -23,7 +23,9 @@ Run these one at a time, in order — each depends on the previous one finishing
 
 `/llm-wiki:wiki-setup` runs an interactive wizard: creates your wiki repo (defaults to current directory), asks for name/focus/remote/date format, initializes git, and **automatically registers the MCP server** (user-scoped, pointing at the wiki path you chose) so wiki tools are available in every Claude Code session.
 
-**Manual MCP registration** (if you need to re-run, reinstalled the plugin, or the wizard failed):
+**Reconnecting an existing wiki** (after reinstalling the plugin, or the MCP server just stopped working): run `/llm-wiki:wiki-reconnect` — it re-registers the server for your existing wiki without touching its content or re-running the whole setup wizard.
+
+**Manual MCP registration** (fallback — only needed if the plugin isn't installed/loading at all, so `/llm-wiki:wiki-reconnect` isn't available either):
 ```bash
 find "<plugin-dir>/server" -name "package.json" -execdir npm install \;
 claude mcp add llm-wiki --scope user --env WIKI_PATH="<absolute-path-to-your-wiki>" -- node "<plugin-dir>/server/index.js"
@@ -53,6 +55,7 @@ Drop files into sources/                     ← zero tokens, any time
 | Command | Model | What it does |
 |---|---|---|
 | `/llm-wiki:wiki-setup` | free | First-time setup wizard |
+| `/llm-wiki:wiki-reconnect [path]` | free | Re-register the MCP server for an existing wiki (e.g. after reinstalling the plugin) |
 | `/llm-wiki:wiki-add [text\|url]` | free | Save content to sources/ for later processing |
 | `/llm-wiki:wiki-process` | Haiku + Sonnet | Batch tag + organize everything new in sources/ |
 | `/llm-wiki:wiki-session [topic]` | Sonnet | Summarize current Claude session → sources/ |
