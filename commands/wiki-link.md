@@ -25,7 +25,7 @@ payments-architecture.md mentions but doesn't link:
    - No: exit
 
 7. For each confirmed link, edit the page — wrap the first occurrence of the title in the body with a link:
-   - Standard mode: `[Title](pages/slug.md)`
+   - Standard mode: `[Title](slug.md)` (same directory — both pages live in `wiki/pages/`)
    - Obsidian mode: `[[slug]]`
    - Do NOT link occurrences inside existing links, headings, or frontmatter
 

@@ -56,17 +56,20 @@ function buildTitleMap() {
 // --- Conversion functions ---
 
 function toObsidian(content) {
-  // Replace [Title](pages/slug.md) → [[slug]]
+  // Convert ## Sources links to [[sources/filename]] first — before the
+  // general page-link regex below, since both match a "[...](...)" shape.
+  // Matches either ../../sources/x (correct, two levels up from wiki/pages/)
+  // or the legacy ../sources/x (one level — content written before that was fixed).
   let result = content.replace(
-    /\[([^\]]+)\]\(pages\/([^)]+)\.md\)/g,
-    (_, _title, slug) => `[[${slug}]]`
+    /\[([^\]]+)\]\((?:\.\.\/)+sources\/([^)]+)\)/g,
+    (_, _title, filename) => `[[sources/${filename}]]`
   );
 
-  // Convert ## Sources links to [[sources/filename]] wikilinks so Obsidian
-  // graph shows source→page connections instead of losing them
+  // Replace [Title](slug.md) → [[slug]] — same-dir cross-page link (both
+  // pages live in wiki/pages/). Also matches the legacy pages/slug.md form.
   result = result.replace(
-    /\[([^\]]+)\]\(\.\.\/sources\/([^)]+)\)/g,
-    (_, _title, filename) => `[[sources/${filename}]]`
+    /\[([^\]]+)\]\((?:pages\/)?([^\/)]+)\.md\)/g,
+    (_, _title, slug) => `[[${slug}]]`
   );
 
   return result;
@@ -74,24 +77,25 @@ function toObsidian(content) {
 
 function toStandard(content, titleMap) {
   // Handle source file wikilinks first — before general slug replacement
-  // [[sources/filename.ext]] → [filename.ext](../sources/filename.ext)
+  // [[sources/filename.ext]] → [filename.ext](../../sources/filename.ext)
+  // (up two levels from wiki/pages/ to reach the wiki-root sources/ dir)
   let result = content.replace(
     /\[\[sources\/([^\]]+)\]\]/g,
-    (_, filename) => `[${filename}](../sources/${filename})`
+    (_, filename) => `[${filename}](../../sources/${filename})`
   );
 
-  // Replace [[slug|Display]] → [Display](pages/slug.md)
+  // Replace [[slug|Display]] → [Display](slug.md) — same dir
   result = result.replace(
     /\[\[([^\]|]+)\|([^\]]+)\]\]/g,
-    (_, slug, display) => `[${display}](pages/${slug}.md)`
+    (_, slug, display) => `[${display}](${slug}.md)`
   );
 
-  // Replace [[slug]] → [Title](pages/slug.md) using title map
+  // Replace [[slug]] → [Title](slug.md) using title map — same dir
   result = result.replace(
     /\[\[([^\]|]+)\]\]/g,
     (_, slug) => {
       const title = titleMap[slug] || slug;
-      return `[${title}](pages/${slug}.md)`;
+      return `[${title}](${slug}.md)`;
     }
   );
 
@@ -102,7 +106,7 @@ function rebuildSourcesSection(content, sources) {
   if (!sources || sources.length === 0) return content;
   const section = "\n## Sources\n" + sources.map(s => {
     const name = path.basename(s);
-    return `- [${name}](../${s})`;
+    return `- [${name}](../../${s})`;
   }).join("\n") + "\n";
   // Append before any trailing whitespace
   return content.trimEnd() + section;
@@ -116,7 +120,7 @@ function rebuildBacklinksMd(titleMap) {
     for (const src of sources) {
       if (!backlinks[src]) backlinks[src] = [];
       const title = titleMap[slug] || slug;
-      backlinks[src].push(`[${title}](pages/${slug}.md)`);
+      backlinks[src].push(`[${title}](wiki/pages/${slug}.md)`);
     }
   }
 
@@ -189,7 +193,7 @@ console.log(`  ✓ config.yaml updated to link_format: ${TARGET}`);
 
 console.log(`\nDone. ${convertedCount} page(s) converted to ${TARGET} format.`);
 if (TARGET === "obsidian") {
-  console.log(`Open ${WIKI_PATH}/wiki/ in Obsidian as your vault. Install the Dataview plugin for query support.`);
+  console.log(`Open ${WIKI_PATH} in Obsidian as your vault (vault root is the wiki folder itself, not wiki/). Install the Dataview plugin for query support.`);
 } else {
   console.log("Links now render on GitLab, GitHub, VS Code, Warp, and any editor.");
 }

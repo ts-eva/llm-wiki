@@ -1,6 +1,6 @@
 Summarize the current Claude session and save it to sources/ for later processing.
 
-Use this at the end of a productive session to capture learnings, decisions, and outcomes before they're gone. Pairs with /wiki-digest — session captures show up in "what did I do this week?"
+Use this at the end of a productive session to capture learnings, decisions, and outcomes before they're gone. Pairs with /llm-wiki:wiki-digest — session captures show up in "what did I do this week?"
 
 Title/focus: $ARGUMENTS
 

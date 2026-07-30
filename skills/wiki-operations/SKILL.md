@@ -133,11 +133,11 @@ Inverse index: source file → wiki pages that reference it. Update whenever a p
 # Backlinks
 
 ## sources/paper.pdf
-- [Page Title](pages/page-title.md)
-- [Another Page](pages/another-page.md)
+- [Page Title](wiki/pages/page-title.md)
+- [Another Page](wiki/pages/another-page.md)
 
 ## sources/notes.md
-- [Concept Page](pages/concept.md)
+- [Concept Page](wiki/pages/concept.md)
 ```
 
 ## Updating an existing page

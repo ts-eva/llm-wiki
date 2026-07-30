@@ -285,7 +285,7 @@ function saveSource({ content, title, source_url }) {
     execSync(`git -C "${WIKI_PATH}" add sources/${filename} && git -C "${WIKI_PATH}" commit -m "wiki: add source ${slug}"`, { stdio: "pipe" });
   } catch { /* git may not be configured in all environments */ }
 
-  return { saved: true, file: `sources/${filename}`, message: "Run /wiki-process when ready to tag and organize." };
+  return { saved: true, file: `sources/${filename}`, message: "Run /llm-wiki:wiki-process when ready to tag and organize." };
 }
 
 function getBacklinks({ source_file }) {
@@ -322,7 +322,7 @@ function getBacklinks({ source_file }) {
         const hasWikilinks = page.content.includes("[[");
         results.push(hasWikilinks
           ? `[[${slug}]]`
-          : `[${page.frontmatter.title || slug}](pages/${slug}.md)`);
+          : `[${page.frontmatter.title || slug}](wiki/pages/${slug}.md)`);
       }
     }
   }
@@ -399,7 +399,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "save_source",
-      description: "Save content to sources/ for later processing via /wiki-process. Use this from any ambient session to capture notes without creating a wiki page immediately.",
+      description: "Save content to sources/ for later processing via /llm-wiki:wiki-process. Use this from any ambient session to capture notes without creating a wiki page immediately.",
       inputSchema: {
         type: "object",
         properties: {

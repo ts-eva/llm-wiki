@@ -158,8 +158,23 @@ Store as USE_AS_MEMORY: `Yes`→`true`, `No`→`false`.
 
 ## Phase 2: Check for existing wiki
 
-If the wiki location directory already exists and contains a `config.yaml`, stop and tell the user:
-"A wiki already exists at <path>. Run /llm-wiki:wiki-setup again only to create a new wiki at a different location."
+If the wiki location directory already exists and contains a `config.yaml`, this is not a fresh setup — most commonly this happens after the plugin was uninstalled and reinstalled (or the plugin cache was cleared), which does not by itself restore the MCP server registration. Do not just refuse — offer to fix that.
+
+Read the existing `config.yaml` at `<path>` to get `wiki.name` for the confirmation message, then call `AskUserQuestion`:
+- header: `Existing wiki`
+- question: `A wiki already exists at <path> (<wiki.name>). What would you like to do?`
+- options:
+  - label: `Reconnect MCP server`, description: `Re-register the MCP server for this existing wiki — use this after reinstalling the plugin. Does not touch your wiki content.`
+  - label: `Create new wiki elsewhere`, description: `Stop here and re-run this wizard, choosing a different location at the "Wiki location" question`
+  - label: `Cancel`, description: `Stop here, make no changes`
+
+**If "Reconnect MCP server"**: skip directly to **Phase 6**, using `<path>` as `<WIKI_PATH_ABSOLUTE>`. Before registering, first run `claude mcp remove llm-wiki --scope user` (ignore any "not found" error — it just means there was nothing stale to clear). Then complete Phase 6's registration steps normally. Afterward, print:
+"MCP server reconnected for wiki at <path>. Your wiki content is unchanged."
+Stop here — do not run Phases 3–5 or 7–9.
+
+**If "Create new wiki elsewhere"**: tell the user "Re-run /llm-wiki:wiki-setup and choose a different location at the wiki location question." Stop here.
+
+**If "Cancel"**: stop here, no changes.
 
 ---
 

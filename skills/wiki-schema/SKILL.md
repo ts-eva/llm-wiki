@@ -51,8 +51,8 @@ Read `config.yaml` before writing any links. The `wiki.link_format` field contro
 
 **`standard`** (default) — regular Markdown links. Renders everywhere: GitLab, GitHub, VS Code, Warp, any IDE.
 ```markdown
-[Event Sourcing](pages/event-sourcing.md)          ← linking to another wiki page
-[Meeting Notes](../sources/meeting-2026-05-27.md)  ← linking to a source file
+[Event Sourcing](event-sourcing.md)                   ← linking to another wiki page (same dir, both in wiki/pages/)
+[Meeting Notes](../../sources/meeting-2026-05-27.md)  ← linking to a source file (up two levels from wiki/pages/)
 ```
 
 **`obsidian`** — wikilinks. Enables Obsidian graph view and native backlinks. Does not render on GitLab/GitHub web UI.
@@ -84,7 +84,7 @@ One-paragraph summary of the topic.
 
 ## Sources
 <!-- Standard mode only — omit in Obsidian mode -->
-- [Source Title](../sources/filename.ext)
+- [Source Title](../../sources/filename.ext)
 ```
 
 ## config.yaml schema

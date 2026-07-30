@@ -10,15 +10,15 @@ If $ARGUMENTS is empty, ask the user:
 ## What this does
 
 **Standard → Obsidian:**
-- Converts all `[Title](pages/slug.md)` links to `[[slug]]`
+- Converts all `[Title](slug.md)` cross-page links to `[[slug]]`
 - Removes `## Sources` sections (Obsidian tracks backlinks natively)
 - Deletes `backlinks.md` (root)
 - Scaffolds `.obsidian/` at wiki root if not already present
 - Updates `config.yaml` → `link_format: obsidian`
 
 **Obsidian → Standard:**
-- Converts `[[slug]]` → `[Title](pages/slug.md)` (title looked up from page frontmatter)
-- Converts `[[slug|Display]]` → `[Display](pages/slug.md)`
+- Converts `[[slug]]` → `[Title](slug.md)` (title looked up from page frontmatter; same directory since both pages live in `wiki/pages/`)
+- Converts `[[slug|Display]]` → `[Display](slug.md)`
 - Rebuilds `## Sources` sections from each page's `sources` frontmatter
 - Rebuilds `backlinks.md` (root) from scratch
 - Removes `.obsidian/` folder from wiki root

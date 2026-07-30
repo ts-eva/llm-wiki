@@ -12,7 +12,7 @@ Show a quick dashboard of your wiki's current state. Free — no model needed.
 ### Tags
 - Read `wiki/tags.md` — count total canonical tags
 - For each page, collect its `tags:` array — tally usage per tag
-- Report top 10 most-used tags
+- Report top 5 most-used tags
 
 ### Sources
 - Count files in `sources/` (excluding `.gitkeep`, `index.md`)
