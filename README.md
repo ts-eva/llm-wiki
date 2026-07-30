@@ -65,8 +65,7 @@ Drop files into sources/                     ← zero tokens, any time
 | `get_page(slug)` | Fetch a page by slug |
 | `list_pages(type?, tag?, include_sensitive?)` | List pages, filterable |
 | `list_tags()` | Canonical tag list |
-| `add_note(slug, markdown)` | Write wiki page + update indexes + commit |
-| `save_source(content, title?, source_url?)` | Save to sources/ for later pipeline processing |
+| `save_source(content, title?, source_url?)` | Save to sources/ for later pipeline processing — the only write path from ambient sessions |
 | `get_backlinks(source_file)` | Pages referencing a source file |
 | `get_recent(days?)` | Recent log entries (default 7 days) |
 

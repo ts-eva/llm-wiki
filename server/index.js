@@ -85,16 +85,6 @@ function writeWikiFile(name, content) {
   fs.writeFileSync(filePath, content, "utf8");
 }
 
-function gitCommit(message) {
-  try {
-    execSync(`git -C "${WIKI_PATH}" add .`, { stdio: "pipe" });
-    execSync(`git -C "${WIKI_PATH}" commit -m "${message}"`, { stdio: "pipe" });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function readDateFormat() {
   const configPath = path.join(WIKI_PATH, "config.yaml");
   if (!fs.existsSync(configPath)) return "MM/DD/YYYY";
@@ -298,52 +288,6 @@ function saveSource({ content, title, source_url }) {
   return { saved: true, file: `sources/${filename}`, message: "Run /wiki-process when ready to tag and organize." };
 }
 
-function addNote({ slug, markdown }) {
-  if (!slug || !markdown) return { error: "slug and markdown are required" };
-
-  const filePath = path.join(PAGES_DIR, `${slug}.md`);
-  fs.mkdirSync(PAGES_DIR, { recursive: true });
-  fs.writeFileSync(filePath, markdown, "utf8");
-
-  const parsed = matter(markdown);
-  const { title, type, tags = [], sources = [] } = parsed.data;
-
-  // Update index.md
-  const indexPath = path.join(WIKI_DIR, "index.md");
-  let index = fs.existsSync(indexPath) ? fs.readFileSync(indexPath, "utf8") : "";
-  const entry = `- [${title || slug}](pages/${slug}.md) — ${parsed.content.split("\n").find((l) => l.trim()) || ""}`;
-  const section = type ? type.charAt(0).toUpperCase() + type.slice(1) + "s" : "Concepts";
-  if (index.includes(`## ${section}`)) {
-    index = index.replace(`## ${section}\n`, `## ${section}\n${entry}\n`);
-  } else {
-    index += `\n## ${section}\n${entry}\n`;
-  }
-  fs.writeFileSync(indexPath, index, "utf8");
-
-  // Append to log.md (root-level operational file, not in vault)
-  const logPath = path.join(WIKI_PATH, "log.md");
-  const logEntry = `\n## [${today()}] add | ${title || slug}`;
-  fs.appendFileSync(logPath, logEntry, "utf8");
-
-  // Update backlinks.md (root-level operational file)
-  if (sources.length) {
-    const backlinksPath = path.join(WIKI_PATH, "backlinks.md");
-    let backlinks = fs.existsSync(backlinksPath) ? fs.readFileSync(backlinksPath, "utf8") : "# Backlinks\n";
-    for (const src of sources) {
-      const link = `- [${title || slug}](pages/${slug}.md)`;
-      if (backlinks.includes(`## ${src}`)) {
-        backlinks = backlinks.replace(`## ${src}\n`, `## ${src}\n${link}\n`);
-      } else {
-        backlinks += `\n## ${src}\n${link}\n`;
-      }
-    }
-    fs.writeFileSync(backlinksPath, backlinks, "utf8");
-  }
-
-  gitCommit(`wiki: add ${title || slug}`);
-  return { success: true, slug, title: title || slug };
-}
-
 function getBacklinks({ source_file }) {
   // Obsidian CLI path — native backlink tracking, no file reads
   if (useObsidian()) {
@@ -435,18 +379,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: { type: "object", properties: {} },
     },
     {
-      name: "add_note",
-      description: "Write a new wiki page and update all indexes. Claude should format the full markdown (with frontmatter) before calling this.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          slug: { type: "string", description: "kebab-case filename without .md" },
-          markdown: { type: "string", description: "Complete markdown content including YAML frontmatter" },
-        },
-        required: ["slug", "markdown"],
-      },
-    },
-    {
       name: "get_backlinks",
       description: "Return all wiki pages that reference a given source file",
       inputSchema: {
@@ -489,7 +421,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   else if (name === "get_page") result = getPage(args);
   else if (name === "list_pages") result = listPages(args);
   else if (name === "list_tags") result = listTags();
-  else if (name === "add_note") result = addNote(args);
   else if (name === "get_backlinks") result = getBacklinks(args);
   else if (name === "get_recent") result = getRecent(args);
   else if (name === "save_source") result = saveSource(args);
