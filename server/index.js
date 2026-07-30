@@ -18,37 +18,6 @@ const WIKI_PATH = process.env.WIKI_PATH
 const PAGES_DIR = path.join(WIKI_PATH, "wiki", "pages");
 const WIKI_DIR  = path.join(WIKI_PATH, "wiki");
 
-// --- Config & Obsidian CLI ---
-
-function readLinkFormat() {
-  const configPath = path.join(WIKI_PATH, "config.yaml");
-  if (!fs.existsSync(configPath)) return "standard";
-  const raw = fs.readFileSync(configPath, "utf8");
-  return raw.match(/link_format:\s*(\S+)/)?.[1]?.replace(/['"]/g, "") || "standard";
-}
-
-// Cached per-process — Obsidian either is or isn't running when server starts
-let _obsidianAvailable = null;
-function obsidianAvailable() {
-  if (_obsidianAvailable !== null) return _obsidianAvailable;
-  try {
-    execSync("obsidian version", { stdio: "pipe", timeout: 2000 });
-    _obsidianAvailable = true;
-  } catch {
-    _obsidianAvailable = false;
-  }
-  return _obsidianAvailable;
-}
-
-function obsidianRun(cmd) {
-  return execSync(`obsidian ${cmd}`, { encoding: "utf8", stdio: "pipe", timeout: 5000 });
-}
-
-// Returns true if we should try Obsidian CLI for read operations
-function useObsidian() {
-  return readLinkFormat() === "obsidian" && obsidianAvailable();
-}
-
 // --- Helpers ---
 
 function readMarkdownFiles(dir) {
@@ -131,29 +100,7 @@ function parseIndexMd() {
 function searchWiki({ query, tags, include_sensitive = false }) {
   const q = (query || "").toLowerCase();
 
-  // Obsidian CLI path — no file reads needed
-  if (useObsidian()) {
-    try {
-      const raw = obsidianRun(`search:context "${query.replace(/"/g, '\\"')}"`);
-      const results = [];
-      // Output format: "pages/slug.md:\n  ...matching line...\n"
-      for (const block of raw.split(/\n(?=\S)/)) {
-        const lines = block.trim().split("\n");
-        const fileMatch = lines[0].match(/pages\/([^:.]+)\.md/);
-        if (!fileMatch) continue;
-        const slug = fileMatch[1];
-        const matchExcerpt = lines.slice(1).map((l) => l.trim()).join(" ").slice(0, 150);
-        const page = readPage(slug);
-        if (!page) continue;
-        if (!include_sensitive && page.frontmatter.sensitive === true) continue;
-        if (tags?.length && !tags.some((t) => page.frontmatter.tags?.includes(t))) continue;
-        results.push({ slug, excerpt: matchExcerpt, matchedIn: "obsidian-search" });
-      }
-      if (results.length) return { found: true, count: results.length, results, via: "obsidian-cli" };
-    } catch { /* fall through to file I/O */ }
-  }
-
-  // File I/O path — index scan first, content scan as fallback
+  // Index scan first, content scan as fallback
   const results = [];
   const seenSlugs = new Set();
 
@@ -188,7 +135,7 @@ function searchWiki({ query, tags, include_sensitive = false }) {
   }
 
   if (!results.length) return { found: false, message: `No pages found matching "${query}"` };
-  return { found: true, count: results.length, results, via: "file-io" };
+  return { found: true, count: results.length, results };
 }
 
 function getPage({ slug }) {
@@ -221,27 +168,13 @@ function listPages({ type, tag, include_sensitive = false }) {
 }
 
 function listTags() {
-  // Obsidian CLI path — returns tags with usage counts, no file reads
-  if (useObsidian()) {
-    try {
-      const raw = obsidianRun("tags");
-      // Output format: "tag-name (N)\n..."
-      const tags = raw.trim().split("\n")
-        .map((l) => l.match(/^(.+?)\s+\((\d+)\)$/))
-        .filter(Boolean)
-        .map((m) => ({ tag: m[1].trim(), count: parseInt(m[2]) }));
-      if (tags.length) return { count: tags.length, tags, via: "obsidian-cli" };
-    } catch { /* fall through */ }
-  }
-
-  // File I/O path — read tags.md
   const raw = readWikiFile("tags.md");
   const tags = [];
   for (const line of raw.split("\n")) {
     const match = line.match(/^- `([^`]+)`\s*[—–-]\s*(.+)$/);
     if (match) tags.push({ tag: match[1], description: match[2].trim() });
   }
-  return { count: tags.length, tags, via: "file-io" };
+  return { count: tags.length, tags };
 }
 
 function getRecent({ days = 7 } = {}) {
@@ -289,15 +222,6 @@ function saveSource({ content, title, source_url }) {
 }
 
 function getBacklinks({ source_file }) {
-  // Obsidian CLI path — native backlink tracking, no file reads
-  if (useObsidian()) {
-    try {
-      const raw = obsidianRun(`backlinks "${source_file}"`);
-      const pages = raw.trim().split("\n").map((l) => l.trim()).filter(Boolean);
-      if (pages.length) return { source_file, count: pages.length, pages, via: "obsidian-cli" };
-    } catch { /* fall through */ }
-  }
-
   const results = [];
 
   // Standard mode: read backlinks.md (root-level)
@@ -327,7 +251,7 @@ function getBacklinks({ source_file }) {
     }
   }
 
-  return { source_file, count: results.length, pages: results, via: "file-io" };
+  return { source_file, count: results.length, pages: results };
 }
 
 // --- Server setup ---
