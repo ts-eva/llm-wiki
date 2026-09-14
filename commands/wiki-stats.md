@@ -17,7 +17,7 @@ Show a quick dashboard of your wiki's current state. Free — no model needed.
 ### Sources
 - Count files in `sources/` (excluding `.gitkeep`, `index.md`)
 - Count entries in `sources/index.md` (sections starting with `## sources/`)
-- Unprocessed = files in sources/ not appearing in sources/index.md
+- Call the `source_status` tool: Unprocessed = untagged + changed (edited since tagging); Pending organize = unorganized; also report removed and ignored counts if non-zero
 - Organized = entries in sources/index.md where `wiki-pages:` is non-empty
 
 ### Activity

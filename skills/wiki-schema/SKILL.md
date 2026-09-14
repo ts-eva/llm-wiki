@@ -11,6 +11,19 @@ All wiki pages live in `wiki/pages/` and use `kebab-case.md` filenames. Derive t
 
 Examples: `event-sourcing.md`, `andrej-karpathy.md`, `summary-attention-is-all-you-need.md`
 
+### Source file naming
+
+Files in `sources/` are named by **readable title**, not slug — in Obsidian the filename is the note title.
+
+- Title in all lowercase, spaces kept: `payments architecture review with the platform team.md`
+- No `session-`/`project-` prefixes, no date suffix (the date lives in `created:` frontmatter)
+- Hyphens only where they are part of a name (`llm-wiki`, `x-ray`); no en/em dashes as separators
+- Strip characters that break on some OS or in Obsidian links: `/ \ : * ? " < > | # ^ [ ]` plus `$` and backtick (they expand inside double-quoted shell paths); drop a trailing `.md` from the title; no leading/trailing dots or spaces; max ~180 chars
+- Same title = same note: saving with an existing title (case-insensitive) updates that file in place — read it first and write the full merged content; `created:` is kept and `updated:` set. Only untitled saves get a ` (2)`, ` (3)`, … suffix
+- Always quote paths in shell commands (`git add "sources/my title.md"`) and in YAML lists (`sources: ["sources/my title.md"]`)
+
+`save_source` applies these rules automatically (`server/source-filename.js`).
+
 ## Page types
 
 | Type | Purpose | Filename prefix |

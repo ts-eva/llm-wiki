@@ -57,7 +57,7 @@ Drop files into sources/                     ← zero tokens, any time
 | `/llm-wiki:wiki-setup` | free | First-time setup wizard |
 | `/llm-wiki:wiki-reconnect [path]` | free | Re-register the MCP server for an existing wiki (e.g. after reinstalling the plugin) |
 | `/llm-wiki:wiki-add [text\|url]` | free | Save content to sources/ for later processing |
-| `/llm-wiki:wiki-process` | Haiku + Sonnet | Batch tag + organize everything new in sources/ |
+| `/llm-wiki:wiki-process` | Haiku + Sonnet | Batch tag + organize everything new or changed in sources/ |
 | `/llm-wiki:wiki-session [topic]` | Sonnet | Summarize current Claude session → sources/ |
 | `/llm-wiki:wiki-ask [question]` | Sonnet | Synthesize answer from wiki pages |
 | `/llm-wiki:wiki-search [query]` | free | Find pages by text or tag |
@@ -65,7 +65,7 @@ Drop files into sources/                     ← zero tokens, any time
 | `/llm-wiki:wiki-stats` | free | Dashboard: page counts, tags, pipeline status |
 | `/llm-wiki:wiki-retag` | Haiku + Sonnet | Consolidate near-duplicate tags |
 | `/llm-wiki:wiki-link` | Haiku | Find unlinked page title mentions, add links |
-| `/llm-wiki:wiki-autotag` | Haiku | Tag new sources/ files (run by cron or manually) |
+| `/llm-wiki:wiki-autotag` | Haiku | Tag new or changed sources/ files (run by cron or manually) |
 | `/llm-wiki:wiki-open` | free | Open wiki vault in Obsidian |
 | `/llm-wiki:wiki-convert [format]` | free | Switch between standard and Obsidian link format |
 | `/llm-wiki:wiki-commit` | free | Manual git commit |
@@ -78,7 +78,9 @@ Drop files into sources/                     ← zero tokens, any time
 | `get_page(slug)` | Fetch a page by slug |
 | `list_pages(type?, tag?, include_sensitive?)` | List pages, filterable |
 | `list_tags()` | Canonical tag list |
-| `save_source(content, title?, source_url?)` | Save to sources/ for later pipeline processing — the only write path from ambient sessions |
+| `save_source(content, title?, source_url?)` | Save to sources/ for later pipeline processing — the only write path from ambient sessions; same title updates the existing note |
+| `source_status()` | Pipeline status of sources/: untagged, changed, unorganized, removed |
+| `mark_sources(files, stage)` | Pipeline-only: stamp index entries (tagged / organized / baseline / remove) |
 | `get_backlinks(source_file)` | Pages referencing a source file |
 | `get_recent(days?)` | Recent log entries (default 7 days) |
 

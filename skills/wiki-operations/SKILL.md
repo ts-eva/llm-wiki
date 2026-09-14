@@ -22,30 +22,29 @@ Run these steps at the start of every session when inside the wiki repo:
 
 1. Read `config.yaml` to load user settings
 2. If `git.auto_pull` is true and a remote is configured: run `git pull`
-3. Run `git status` — any untracked files in `sources/` signal new material
-4. If new files exist in `sources/`:
-   - Run wiki-tagger (Haiku) on each new file to update `sources/index.md`
-   - Then tell the user and offer to organize them into wiki pages via wiki-curator
+3. Call the `source_status` tool — untagged or changed files in `sources/` signal new material
+4. If there are any, tell the user and offer to run `/llm-wiki:wiki-process` (tags and organizes new and changed sources)
 
 ## Two-phase ingestion
 
-**Phase 1 — Tagging (wiki-tagger, Haiku)**: runs automatically on new source files
+Change tracking: each `sources/index.md` entry carries `hash:` (source content hash when tagged) and `organized-hash:` (the hash its wiki pages were built from), stamped only by the `mark_sources` tool. `source_status` compares them with the current files, so edits to existing sources are processed just like new files.
+
+**Phase 1 — Tagging (wiki-tagger, Haiku)**: runs on new and changed source files
 - Reads raw source once
-- Writes rich entry to `sources/index.md` (tags, key-points, action-items, quotes)
-- Commits `sources/index.md` and any new tags
+- Writes a rich entry to `sources/index.md` (tags, key-points, action-items, quotes); for a changed source, replaces its entry in place and keeps `wiki-pages:`
+- Pipeline stamps `hash:` and commits `sources/index.md` and any new tags
 
 **Phase 2 — Organization (wiki-curator, Sonnet)**: runs when user wants wiki pages
-- Reads `sources/index.md` entries where `wiki-pages: []`
-- Writes structured wiki pages from the Haiku-processed summaries
+- Works the `source_status` unorganized list: new entries (`wiki-pages: []`) and entries whose source changed
+- Writes or revises structured wiki pages from the Haiku-processed summaries; cleans up pages citing removed sources
 - Never re-reads raw source files (Haiku captured what matters)
 - Updates all wiki indexes and commits
 
 ## Ingesting pasted content (no source file)
 
 When a user pastes content directly (no file in sources/):
-1. Write the content to `sources/<slug>-<date>.md` first
-2. Run wiki-tagger on it
-3. Then proceed to Phase 2
+1. Write the content to `sources/<title>.md` first (naming: see `llm-wiki:wiki-schema`)
+2. Run `/llm-wiki:wiki-process`
 
 ## Maintaining wiki/index.md
 
@@ -140,7 +139,8 @@ Before the session ends:
 
 ## Scope guard
 
-- Write only to `wiki/pages/`, `wiki/index.md`, `wiki/tags.md`, `log.md` (root), `backlinks.md` (root)
-- `sources/` is read-only — never modify or delete source files
+- Write only to `wiki/pages/`, `wiki/index.md`, `wiki/tags.md`, `log.md` (root), `backlinks.md` (root), and source files in `sources/`
+- `sources/` holds raw material. Add a new file for new material; edit an existing source when its content changes (corrections, follow-ups) — `/llm-wiki:wiki-process` detects the edit and updates the pages. Don't delete a source unless the user asks.
+- `sources/index.md` is pipeline-owned: written only by wiki-tagger (entries), wiki-curator (`wiki-pages:` lines) and the `mark_sources` tool (`hash:` / `organized-hash:`). Never hand-edit it in a session — to change what the wiki says, edit or add a source and run `/llm-wiki:wiki-process`.
 - Never modify `config.yaml` unless the user explicitly asks
 - Never modify `CLAUDE.md` unless the user explicitly asks
