@@ -41,7 +41,7 @@ First run `pwd` to get the current working directory (CWD).
 - header: `Wiki location`
 - question: `Where should the wiki be created?`
 - options:
-  - label: `<CWD>/<SLUG>` *(fill in: current directory + slug, e.g. /Users/evali/Documents/tsm)*, description: `Current directory — default`
+  - label: `<CWD>/<SLUG>` *(fill in: current directory + slug, e.g. /Users/you/Documents/dev-journal)*, description: `Current directory — default`
   - label: `<HOME>/<SLUG>` *(fill in: home directory + slug)*, description: `Home directory`
 
 Store as WIKI_PATH (option 1 or blank → CWD/SLUG). Expand any `~` to HOME.

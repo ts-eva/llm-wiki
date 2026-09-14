@@ -7,10 +7,10 @@ Title/focus: $ARGUMENTS
 ## Steps
 
 1. Read `config.yaml` to get `mcp.path` and `wiki.date_format`
-2. Derive a slug:
-   - If $ARGUMENTS is provided, slugify it (e.g. "payments architecture discussion" → `payments-architecture-discussion`)
-   - Otherwise, infer a short topic from the session (e.g. `llm-wiki-plugin-dev`)
-3. Set filename: `sources/session-<slug>-<YYYY-MM-DD>.md`
+2. Derive a title:
+   - If $ARGUMENTS is provided, lowercase it, keeping spaces (e.g. "Payments Architecture Discussion" → `payments architecture discussion`)
+   - Otherwise, infer a short readable topic from the session (e.g. `llm-wiki plugin dev`)
+3. Set filename: `sources/<Title>.md` — see **Source file naming** in `llm-wiki:wiki-schema` (all lowercase, spaces kept, no slug, no date, no `session-` prefix; if a source with that title already exists, update it: read it, merge this session's summary in, keep its `created:` and add `updated:`)
 
 ## Summarize the session
 
@@ -40,7 +40,7 @@ session-topic: <topic>
 
 Then:
 ```bash
-git -C "<wiki-path>" add sources/session-<slug>-<YYYY-MM-DD>.md && git -C "<wiki-path>" commit -m "wiki: capture session <slug>"
+git -C "<wiki-path>" add "sources/<Title>.md" && git -C "<wiki-path>" commit -m "wiki: capture session <Title>"
 ```
 
-Tell the user: "Session saved to sources/session-<slug>-<YYYY-MM-DD>.md. Run /llm-wiki:wiki-process when you're ready to organize it into wiki pages."
+Tell the user: "Session saved to sources/<Title>.md. Run /llm-wiki:wiki-process when you're ready to organize it into wiki pages."

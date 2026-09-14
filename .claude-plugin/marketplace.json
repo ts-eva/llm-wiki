@@ -6,7 +6,7 @@
       "name": "llm-wiki",
       "source": {
         "source": "url",
-        "url": "git@github.com:ts-eva/llm-wiki.git"
+        "url": "https://github.com/ts-eva/llm-wiki.git"
       },
       "description": "Personal knowledge wiki managed by Claude. Markdown, git-backed, MCP-accessible from any project."
     }
