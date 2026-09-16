@@ -1,6 +1,20 @@
 {
   "name": "llm-wiki",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Personal knowledge wiki managed by Claude. Markdown, git-backed, MCP-accessible from any project.",
-  "author": { "name": "Eva Li" }
+  "author": { "name": "Eva Li" },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.js\"",
+            "timeout": 5,
+            "statusMessage": "Loading wiki memory..."
+          }
+        ]
+      }
+    ]
+  }
 }

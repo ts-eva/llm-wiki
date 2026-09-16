@@ -38,6 +38,8 @@ find "$HOME/.claude" -type d -name "llm-wiki" 2>/dev/null | head -1
 
 **Requirement**: GitHub SSH key with access to `ts-eva/llm-wiki`.
 
+**Updating**: after `/plugin update llm-wiki@llm-wiki-marketplace`, run `/reload-plugins` — the `SessionStart` hook is declared in `.claude-plugin/plugin.json` and only takes effect once the plugin reloads (or in the next new session).
+
 ## Daily workflow
 
 ```
@@ -90,7 +92,9 @@ Drop files into sources/                     ← zero tokens, any time
 
 **Direct** — `cd <wiki-path> && claude`. CLAUDE.md loads automatically. Best for bulk ingestion, restructuring, or anything that needs the full wiki in context.
 
-**As Claude memory** — opt-in during `/llm-wiki:wiki-setup`. Writes a block to `~/.claude/CLAUDE.md` so Claude searches the wiki for context at the start of every session and saves learnings back. Session captures via `/llm-wiki:wiki-session` feed into the pipeline, which organises them into the right wiki pages — closing the loop.
+**As Claude memory** — automatic, via a `SessionStart` hook (`hooks/session-start.js`). Every session starts with the wiki's location, its most recent sources, and the naming rules already in context, so Claude recalls before it answers and names files correctly the first time. Instructions in `~/.claude/CLAUDE.md` alone are not enough: they're prose the model can skip, and it does — a hook always fires.
+
+The hook resolves the wiki the same way the MCP server does (`$WIKI_PATH`, else the path registered for `llm-wiki` in `~/.claude.json`, else `~/wiki`), prints nothing when no wiki is found, and runs in ~20 ms. Session captures via `/llm-wiki:wiki-session` feed into the pipeline, which organises them into the right wiki pages — closing the loop.
 
 ## Wiki structure
 
