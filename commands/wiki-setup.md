@@ -237,7 +237,7 @@ Before the session ends, check `git status`. If there are uncommitted changes:
 ## Scope
 
 Write only to `wiki/pages/`, `wiki/index.md`, `wiki/tags.md`, `log.md` (root), `backlinks.md` (root).
-`sources/` is read-only — never modify or delete source files.
+`sources/` is the editable layer: to change or correct a fact, edit the source file in place and commit. `/llm-wiki:wiki-process` picks up the change by content hash and revises the generated pages. Never hand-edit generated wiki pages to change facts.
 ```
 
 Substitute: WIKI_NAME from user answer.
