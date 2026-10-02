@@ -1,4 +1,4 @@
-Synthesize an answer from your wiki. Different from /llm-wiki:wiki-search (which returns links) — this reads relevant pages and answers directly.
+Answer a question from the wiki. Different from /llm-wiki:wiki-search (which returns links) — this reads the relevant notes and answers directly.
 
 Question: $ARGUMENTS
 
@@ -6,13 +6,8 @@ If $ARGUMENTS is empty, ask the user: "What would you like to know from your wik
 
 ## Steps
 
-1. Read `config.yaml` to get `mcp.path`
-2. Read `wiki/index.md` — scan titles and one-line summaries to identify pages relevant to the question (minimal tokens)
-3. Select the 2–5 most relevant page slugs. If none seem relevant, say: "I don't have anything on that yet. Add sources with /llm-wiki:wiki-add and process them with /llm-wiki:wiki-process."
-4. Read each selected page from `wiki/pages/<slug>.md`
-5. Answer the question directly and concisely, drawing from those pages
-6. End with: "Sources: [Page Title](pages/slug.md), ..." listing the pages used
-
-## Tone
-
-Answer as if you're the user's knowledgeable colleague who has read everything in the wiki. Synthesize — don't just quote. If the pages give conflicting information, note the tension. If the answer is partial, say what's missing.
+1. Call `search_wiki` with the key words of the question (try a second, narrower or broader query if the first finds nothing useful).
+2. Read the 2–5 most relevant hits: `get_page` for pages; Read `<wiki>/sources/<file>` for unprocessed source hits (`<wiki>` = the `wiki` field of `source_status`).
+3. Nothing relevant: "I don't have anything on that yet. Capture it with /llm-wiki:wiki-add." Stop.
+4. Answer directly and concisely. Synthesize, don't quote. Note conflicting information; say what's missing if the answer is partial.
+5. End with: "Sources: <page titles / source files used>".

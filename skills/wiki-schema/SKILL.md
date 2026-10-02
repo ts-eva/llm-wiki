@@ -22,7 +22,7 @@ Files in `sources/` are named by **readable title**, not slug — in Obsidian th
 - Same title = same note: saving with an existing title (case-insensitive) updates that file in place — read it first and write the full merged content; `created:` is kept and `updated:` set. Only untitled saves get a ` (2)`, ` (3)`, … suffix
 - Always quote paths in shell commands (`git add "sources/my title.md"`) and in YAML lists (`sources: ["sources/my title.md"]`)
 
-`save_source` applies these rules automatically (`server/source-filename.js`).
+`save_source` applies these rules automatically (`server/source-filename.js`), and `/llm-wiki:wiki-process` renames untagged notes written another way (Obsidian, copied in) to match.
 
 ## Page types
 

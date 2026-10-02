@@ -10,15 +10,13 @@ If $ARGUMENTS is empty, ask the user:
 ## What this does
 
 **Standard → Obsidian:**
-- Converts all `[Title](slug.md)` cross-page links to `[[slug]]`
-- Removes `## Sources` sections (Obsidian tracks backlinks natively)
+- Converts `[Title](slug.md)` cross-page links to `[[slug|Title]]`, in pages and in `wiki/index.md`
+- Removes `## Sources` sections (the `sources:` frontmatter keeps the record; Obsidian tracks backlinks natively)
 - Deletes `backlinks.md` (root)
-- Scaffolds `.obsidian/` at wiki root if not already present
 - Updates `config.yaml` → `link_format: obsidian`
 
 **Obsidian → Standard:**
-- Converts `[[slug]]` → `[Title](slug.md)` (title looked up from page frontmatter; same directory since both pages live in `wiki/pages/`)
-- Converts `[[slug|Display]]` → `[Display](slug.md)`
+- Converts `[[slug]]` → `[Title](slug.md)` (title from page frontmatter) and `[[slug|Display]]` → `[Display](slug.md)`, in pages and in `wiki/index.md` (`pages/slug.md` there)
 - Rebuilds `## Sources` sections from each page's `sources` frontmatter
 - Rebuilds `backlinks.md` (root) from scratch
 - Removes `.obsidian/` folder from wiki root
@@ -29,10 +27,10 @@ If $ARGUMENTS is empty, ask the user:
 1. Read `config.yaml` to get the wiki path (`mcp.path`)
 2. Confirm the conversion direction with the user before proceeding
 3. Run: `node <plugin-path>/server/convert.js "<wiki-path>" <target-format>`
-   - Find the plugin path the same way as /llm-wiki:wiki-setup (search ~/.claude for llm-wiki directory)
+   - `<plugin-path>`: `grep -l '"name": "llm-wiki"' "$HOME"/.claude/plugins/marketplaces/*/.claude-plugin/plugin.json | head -1 | sed 's#/.claude-plugin/plugin.json$##'`
 4. Stage and commit: `git -C "<wiki-path>" add . && git -C "<wiki-path>" commit -m "wiki: convert to <target-format> format"`
 5. Report how many pages were converted and any next steps
 
 ## Note
 
-This is a free operation — no Claude model is used for the conversion. The script handles all link rewriting, title lookup, and index rebuilding deterministically.
+This is a free operation — no Claude model is used for the conversion. The script handles all link rewriting, title lookup, and index rebuilding deterministically. Page frontmatter is preserved byte-for-byte.

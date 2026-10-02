@@ -1,1 +1,4 @@
 server/node_modules/
+server/.installing/
+.DS_Store
+.claude/settings.local.json

@@ -1,25 +1,11 @@
-Summarize what was added or changed in your wiki over a date range. Good for standups, weekly reflection, or staying aware of your own knowledge base.
+Summarize what was added or changed in the wiki over a date range. Good for standups and weekly reflection.
 
-Range: $ARGUMENTS
-
-If $ARGUMENTS is empty, default to `this week`.
-
-## Supported range formats
-
-- `today` — today only
-- `this week` — last 7 days
-- `this month` — current calendar month
-- `YYYY-MM` — a specific month (e.g. `2026-05`)
-- `YYYY-MM-DD to YYYY-MM-DD` — explicit range
+Range: $ARGUMENTS (default `this week`)
 
 ## Steps
 
-1. Read `config.yaml` to get `mcp.path`
-2. Parse `$ARGUMENTS` into a start date and end date (inclusive)
-3. Read `log.md` (root) — filter lines matching `## [YYYY-MM-DD]` within the date range
-4. If no entries found in range: "Nothing was added or changed in that period." Stop here.
-5. For each unique slug referenced, collect its one-line summary from `wiki/index.md`
-6. Invoke the `llm-wiki:wiki-analyst` agent (Haiku) with the filtered log entries and index summaries. Ask it to produce:
-   - One short paragraph: overall narrative of what changed
-   - Bullet list grouped by action: **Added**, **Updated**, each with title + one-line summary
-7. Print the analyst's output directly.
+1. Turn the range into ISO dates: `today`; `this week` (last 7 days); `this month`; `YYYY-MM`; `YYYY-MM-DD to YYYY-MM-DD`.
+2. Call `get_recent` with `since` and `until`. It returns log entries (pages added/updated) and sources captured or edited in the range, including ones not yet processed.
+3. Nothing in either list: "Nothing was added or changed in that period." Stop.
+4. Invoke `llm-wiki:wiki-analyst` (Haiku) with that JSON. Ask for one short narrative paragraph, then bullets grouped as **Added**, **Updated**, **Captured (not yet organized)**.
+5. Print the analyst's output.

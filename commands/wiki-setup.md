@@ -461,13 +461,7 @@ The memory block template (substitute WIKI_PATH and WIKI_NAME):
 ```markdown
 ## Wiki Memory (<WIKI_NAME>)
 
-You have a personal wiki at `<WIKI_PATH>` accessible via the llm-wiki MCP server in every Claude Code session.
-
-Use it as persistent memory:
-- **Session start**: call `search_wiki` for topics relevant to the current project or conversation
-- **Recent activity**: call `get_recent(7)` to recall what was worked on recently
-- **Worth keeping**: call `save_source` to capture anything durable — decisions, learnings, context
-- **End of meaningful session**: suggest running `/llm-wiki:wiki-session` to capture the session for later processing
+Personal wiki at `<WIKI_PATH>` via the llm-wiki MCP server. The llm-wiki SessionStart hook loads its rules, recent notes and pending work into every session — follow those.
 ```
 
 ---
@@ -503,6 +497,8 @@ git commit -m "wiki: init"
    "Could not locate the llm-wiki plugin directory automatically. Please run:
    `claude mcp add llm-wiki --scope user --env WIKI_PATH=<wiki-path> -- node <plugin-dir>/server/start.mjs`
    replacing <plugin-dir> with the llm-wiki marketplace clone under ~/.claude/plugins/marketplaces/."
+
+4. Offer the nightly job with `AskUserQuestion` (header `Nightly`): "Process new notes automatically every night? It costs nothing on nights with no new notes." Yes → `bash "<plugin-dir>/scripts/schedule.sh" install 21:00` (macOS launchd; prints a crontab line elsewhere). Also available later via `/llm-wiki:wiki-schedule`.
 
 ---
 
@@ -541,15 +537,16 @@ Print a summary:
 <if remote> ✓ Remote configured and pushed to <url>
 <if obsidian> ✓ Obsidian vault opened
 <if memory> ✓ Claude memory enabled — wiki context available in every session
+<if nightly> ✓ Nightly processing at 21:00
 
 Workflow:
-  Collect notes anytime → drop files in sources/ (zero tokens)
-  Run /llm-wiki:wiki-process when ready → Haiku tags, Sonnet organizes, all at once
-  Batching saves tokens: one pipeline run beats many individual /llm-wiki:wiki-add calls
+  Collect notes anytime → drop files in sources/ or /llm-wiki:wiki-add (searchable at once)
+  Nightly job or /llm-wiki:wiki-process → Haiku tags, Sonnet organizes, one batch
 
 Commands:
   /llm-wiki:wiki-add      — add a single note from any Claude session
   /llm-wiki:wiki-process  — batch process everything new in sources/ at once
+  /llm-wiki:wiki-schedule — install/remove the nightly processing job
   /llm-wiki:wiki-search   — search your wiki
   /llm-wiki:wiki-open     — open your wiki in Obsidian (Obsidian mode only)
   /llm-wiki:wiki-commit   — manual git commit

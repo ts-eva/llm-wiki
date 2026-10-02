@@ -1,50 +1,16 @@
-Show a quick dashboard of your wiki's current state. Free — no model needed.
+Show a dashboard of the wiki's current state. Free — the `wiki_stats` tool computes everything.
 
-## Steps
-
-1. Read `config.yaml` to get `mcp.path`
-2. Gather stats by reading files directly:
-
-### Pages
-- Count `.md` files in `wiki/pages/` (excluding `.gitkeep`)
-- Count by type: read each file's `type:` frontmatter field, tally entity / concept / summary / synthesis
-
-### Tags
-- Read `wiki/tags.md` — count total canonical tags
-- For each page, collect its `tags:` array — tally usage per tag
-- Report top 5 most-used tags
-
-### Sources
-- Count files in `sources/` (excluding `.gitkeep`, `index.md`)
-- Count entries in `sources/index.md` (sections starting with `## sources/`)
-- Call the `source_status` tool: Unprocessed = untagged + changed (edited since tagging); Pending organize = unorganized; also report removed and ignored counts if non-zero
-- Organized = entries in sources/index.md where `wiki-pages:` is non-empty
-
-### Activity
-- Read `log.md` (root) — count entries this calendar month
-- Report last 5 log entries
-
-## Output format
+Call `wiki_stats` and print:
 
 ```
-Wiki: <wiki name>
+Wiki: <wiki.name from <wiki>/config.yaml; <wiki> = source_status `wiki` field>
 
-Pages
-  Total:      N
-  Entities:   N  Concepts: N  Summaries: N  Syntheses: N
-
-Tags
-  Total: N canonical tags
-  Top 5: tag-one (N), tag-two (N), tag-three (N), ...
-
-Sources
-  Total:       N files
-  Tagged:      N  (in sources/index.md)
-  Organized:   N  (have wiki pages)
-  Pending:     N  (not yet tagged)
-
-Activity this month: N changes
-  Last entries:
-    [YYYY-MM-DD] action | title
-    ...
+Pages      Total N  (concept N, entity N, summary N, synthesis N)
+Tags       N canonical — top: tag (N), tag (N), …
+Sources    N files, N tagged, N organized
+           Pending: N new, N changed, N to organize, N removed; N ignored
+Activity   N changes this month
+           [YYYY-MM-DD] action | title  (last 5)
 ```
+
+Omit pending counts that are zero. If anything is pending, suggest `/llm-wiki:wiki-process`.
