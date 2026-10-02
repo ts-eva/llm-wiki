@@ -22,7 +22,7 @@ Run these steps at the start of every session when inside the wiki repo:
 
 1. Read `config.yaml` to load user settings
 2. If `git.auto_pull` is true and a remote is configured: run `git pull`
-3. The SessionStart hook already reports pending source changes; if any, offer `/llm-wiki:wiki-process` (or point at the nightly job, `/llm-wiki:wiki-schedule`)
+3. The SessionStart hook already reports pending source changes; if any, offer `/llm-wiki:wiki-process` (or point at the daily job, `/llm-wiki:wiki-schedule`)
 
 ## Two-phase ingestion
 

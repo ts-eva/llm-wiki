@@ -50,7 +50,7 @@ Drop files into sources/                     ← zero tokens, any time (any name
 /llm-wiki:wiki-add interesting article url   ← save a URL or paste text (searchable at once)
 /llm-wiki:wiki-session                       ← capture today's Claude session
 
-nightly job (/llm-wiki:wiki-schedule)        ← processes new notes; free on idle nights
+daily job (/llm-wiki:wiki-schedule)          ← processes new notes; free on idle days
 /llm-wiki:wiki-process                       ← same, on demand: Haiku tags, Sonnet organizes
 /llm-wiki:wiki-ask how does X work?          ← synthesized answer from your wiki
 /llm-wiki:wiki-digest this week              ← what did I learn?
@@ -64,7 +64,7 @@ nightly job (/llm-wiki:wiki-schedule)        ← processes new notes; free on id
 | `/llm-wiki:wiki-reconnect [path]` | free | Re-register the MCP server for an existing wiki (e.g. after reinstalling the plugin) |
 | `/llm-wiki:wiki-add [text\|url]` | free | Save content to sources/ via `save_source` (searchable at once) |
 | `/llm-wiki:wiki-process [auto]` | Haiku + Sonnet | Batch prepare + tag + organize everything new, changed or removed in sources/; `auto` = unattended |
-| `/llm-wiki:wiki-schedule [install HH:MM\|uninstall\|status]` | free | Nightly processing job (launchd; crontab line elsewhere) |
+| `/llm-wiki:wiki-schedule [install HH:MM\|uninstall\|status]` | free | Daily processing job (crontab) |
 | `/llm-wiki:wiki-session [topic]` | Sonnet | Summarize current Claude session → sources/ |
 | `/llm-wiki:wiki-ask [question]` | session model | Search, read the top hits, answer |
 | `/llm-wiki:wiki-search [query]` | free | `search_wiki`: ranked pages and sources |
@@ -72,7 +72,7 @@ nightly job (/llm-wiki:wiki-schedule)        ← processes new notes; free on id
 | `/llm-wiki:wiki-stats` | free | `wiki_stats` dashboard: pages, tags, pipeline status |
 | `/llm-wiki:wiki-retag` | Haiku | Analyst proposes tag merges; `rename_tag` applies them |
 | `/llm-wiki:wiki-link` | free | `find_unlinked_mentions`, then add the links you approve |
-| `/llm-wiki:wiki-autotag` | Haiku | Tag only (no organizing); the nightly job supersedes it |
+| `/llm-wiki:wiki-autotag` | Haiku | Tag only (no organizing); the daily job supersedes it |
 | `/llm-wiki:wiki-open` | free | Open wiki vault in Obsidian |
 | `/llm-wiki:wiki-convert [format]` | free | Switch between standard and Obsidian link format |
 | `/llm-wiki:wiki-commit` | free | Manual git commit |
@@ -164,13 +164,19 @@ mcp:
 
 The wiki path comes from the server (`wiki` in `source_status`), never from the current directory or CLAUDE.md, so running it from any project folder is safe.
 
-## Nightly processing (optional)
+## Daily processing (optional)
 
 ```
-/llm-wiki:wiki-schedule install 21:00
+/llm-wiki:wiki-schedule install 16:30
 ```
 
-Installs a launchd agent (`~/Library/LaunchAgents/com.llm-wiki.nightly.plist`; a crontab line is printed on Linux) running `scripts/nightly-process.sh`. It counts pending work with plain node first and exits without starting Claude when there's nothing new, so idle nights cost nothing. Otherwise it runs `claude -p "/llm-wiki:wiki-process auto"` in the wiki folder with a narrow tool allowlist (llm-wiki tools, Read/Write/Edit, Agent, `git`). Log: `~/Library/Logs/llm-wiki-nightly.log`. Remove with `/llm-wiki:wiki-schedule uninstall`. Runs while the Mac is awake at that time; a missed run fires on next wake.
+Adds a crontab line (tagged `# llm-wiki-process`) running `scripts/nightly-process.sh`. Pick a time the machine is awake: cron skips runs while asleep.
+
+- **Free when idle**: it counts pending work with plain node and exits without starting Claude when nothing is new.
+- **Otherwise** it runs `claude -p "/llm-wiki:wiki-process auto"` in the wiki folder, with the MCP server pinned to that same wiki and a narrow tool allowlist (llm-wiki tools, Read/Write/Edit, Agent, `git`).
+- **Auth under cron**: `claude -p` can't read the login keychain from cron and needs `HOME`/`USER`/`LOGNAME`/`TMPDIR`. The script sets those and reads a `claude setup-token` token from `LLM_WIKI_TOKEN_FILE` (default `~/.claude/.oauth-token`, `chmod 600`). Set `LLM_WIKI_TOKEN_FILE` when running install to bake a different path into the cron line.
+- **Overlap**: a mkdir lock skips a run if the previous one is still going.
+- Log: `~/.claude/llm-wiki-process.log`. Remove with `/llm-wiki:wiki-schedule uninstall`.
 
 ## Obsidian support
 
