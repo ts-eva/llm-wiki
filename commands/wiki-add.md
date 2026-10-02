@@ -23,7 +23,7 @@ Format today's date using `wiki.date_format`. Token meanings: `YYYY` = 4-digit y
 1. Strip leading `url:` prefix if present
 2. Use WebFetch to retrieve the page
 3. Extract: page title (for slug + frontmatter) and main body text (strip nav/footer/ads)
-4. Slug from title: lowercase kebab-case, max 40 chars
+4. Name from title: readable lowercase title with spaces (see Naming below)
 
 Write the file with frontmatter:
 ```markdown
@@ -38,7 +38,7 @@ title: <page title>
 
 ## Pasted text or file
 
-Derive a slug from the first line or title of content: lowercase kebab-case, max 40 chars.
+Derive a name from the first line or title of content (see Naming below).
 
 Write the file with frontmatter:
 ```markdown
@@ -49,14 +49,18 @@ created: <formatted-date>
 <content>
 ```
 
+## Naming
+
+Sources are named by readable title: lowercase, **spaces**, no kebab-case slug, no `session-`/`project-` prefix. Hyphens only inside names that contain one (`llm-wiki`, `x-ray`). Session logs: `YYYY-MM-DD short readable topic`. Other sources carry no date in the name (the `created:` frontmatter holds it).
+
 ## Saving
 
-Set filename: `sources/<slug>-<YYYY-MM-DD>.md` (always use ISO date in filename regardless of date_format — keeps filenames sortable).
+Set filename: `sources/<name>.md`.
 
-Write the file to `sources/<slug>-<YYYY-MM-DD>.md`, then:
+Write the file to `sources/<name>.md`, then:
 
 ```bash
-git -C "<wiki-path>" add sources/<slug>-<YYYY-MM-DD>.md && git -C "<wiki-path>" commit -m "wiki: add source <slug>"
+git -C "<wiki-path>" add "sources/<name>.md" && git -C "<wiki-path>" commit -m "wiki: add source <name>"
 ```
 
-Tell the user: "Saved to sources/<slug>-<YYYY-MM-DD>.md. Run /llm-wiki:wiki-process when ready."
+Tell the user: "Saved to sources/<name>.md. Not searchable until processed — run /llm-wiki:wiki-process."
