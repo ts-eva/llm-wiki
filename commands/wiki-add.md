@@ -1,4 +1,4 @@
-Capture content into sources/ with the `save_source` tool. No pipeline runs — the note is searchable immediately; `/llm-wiki:wiki-process` (or the nightly job) organizes it into pages later.
+Capture content into sources/ with the `save_source` tool. No pipeline runs — the note is searchable immediately; `/llm-wiki:wiki-process` (or the daily job) organizes it into pages later.
 
 Content: $ARGUMENTS
 
