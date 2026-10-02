@@ -27,14 +27,10 @@ Run these one at a time, in order — each depends on the previous one finishing
 
 **Manual MCP registration** (fallback — only needed if the plugin isn't installed/loading at all, so `/llm-wiki:wiki-reconnect` isn't available either):
 ```bash
-find "<plugin-dir>/server" -name "package.json" -execdir npm install \;
-claude mcp add llm-wiki --scope user --env WIKI_PATH="<absolute-path-to-your-wiki>" -- node "<plugin-dir>/server/index.js"
+PLUGIN_DIR=$(grep -l '"name": "llm-wiki"' "$HOME"/.claude/plugins/marketplaces/*/.claude-plugin/plugin.json | head -1 | sed 's#/.claude-plugin/plugin.json$##')
+claude mcp add llm-wiki --scope user --env WIKI_PATH="<absolute-path-to-your-wiki>" -- node "$PLUGIN_DIR/server/start.mjs"
 ```
-Where `<plugin-dir>` is found via:
-```bash
-find "$HOME/.claude" -type d -name "llm-wiki" 2>/dev/null | head -1
-```
-`--scope user` matters — without it the server only registers for the current project, and reinstalling the plugin can leave stale or conflicting registrations behind. The `npm install` step matters too: a fresh plugin cache has no `node_modules`, and the server fails to connect (`Connection closed`) without it.
+Register the marketplace clone, not `~/.claude/plugins/cache/.../llm-wiki/<version>/`: each plugin update creates a new versioned cache folder, so a registration there silently stays on the old server. `server/start.mjs` installs the server's npm dependencies on first run and again whenever `package-lock.json` changes, so there's no manual `npm install` step. `--scope user` matters: without it the server only registers for the current project.
 
 **Requirement**: GitHub SSH key with access to `ts-eva/llm-wiki`.
 

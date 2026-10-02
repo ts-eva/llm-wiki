@@ -17,27 +17,24 @@ Path: $ARGUMENTS
 
 4. Find the llm-wiki plugin directory:
    ```
-   find "$HOME/.claude" -type d -name "llm-wiki" 2>/dev/null | head -1
+   grep -l '"name": "llm-wiki"' "$HOME"/.claude/plugins/marketplaces/*/.claude-plugin/plugin.json 2>/dev/null | head -1 | sed 's#/.claude-plugin/plugin.json$##'
    ```
-   If not found, also try:
-   ```
-   find "$HOME/Library/Application Support/Claude" -type d -name "llm-wiki" 2>/dev/null | head -1
-   ```
-   If still not found, tell the user:
-   "Could not locate the llm-wiki plugin directory. Is the plugin installed? Run /plugin install llm-wiki@llm-wiki-marketplace and /reload-plugins first."
+   This is the marketplace clone, a stable path that plugin updates pull into. Do NOT use the versioned `~/.claude/plugins/cache/.../llm-wiki/<version>/` folder: each update creates a new one, so a registration pointing there stays on the old version forever.
+   If not found, tell the user:
+   "Could not locate the llm-wiki plugin. Is it installed? Run /plugin install llm-wiki@llm-wiki-marketplace and /reload-plugins first."
    Stop here.
 
-5. Run `npm install` inside `<plugin-dir>/server/` (a freshly reinstalled plugin has no `node_modules` — without this the server fails to connect with "Connection closed").
-
-6. Clear any stale registration first — a previous install may have registered a now-deleted plugin path:
+5. Clear any stale registration first. Older setups registered a versioned cache path that later updates leave behind:
    ```
    claude mcp remove llm-wiki --scope user
    ```
    Ignore a "not found" error here; it just means there was nothing to clear.
 
-7. Register fresh:
+6. Register fresh (`start.mjs` installs npm dependencies itself on first run):
    ```
-   claude mcp add llm-wiki --scope user --env WIKI_PATH="<path>" -- node "<plugin-dir>/server/index.js"
+   claude mcp add llm-wiki --scope user --env WIKI_PATH="<path>" -- node "<plugin-dir>/server/start.mjs"
    ```
+
+7. Smoke-test the server starts: `printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"t","version":"0"}}}' | WIKI_PATH="<path>" node "<plugin-dir>/server/start.mjs"` should print a JSON line containing `"serverInfo"` (first run can take ~20s while npm installs; stop it with Ctrl-C once the line appears).
 
 8. Confirm: "MCP server reconnected for <wiki.name> at <path>. Restart this session (or start a new one) for the tools to become available — a running session keeps the old connection until restarted."
