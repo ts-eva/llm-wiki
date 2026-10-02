@@ -487,24 +487,22 @@ git commit -m "wiki: init"
 
 1. Find the llm-wiki plugin directory by running:
    ```
-   find "$HOME/.claude" -type d -name "llm-wiki" 2>/dev/null | head -1
+   grep -l '"name": "llm-wiki"' "$HOME"/.claude/plugins/marketplaces/*/.claude-plugin/plugin.json 2>/dev/null | head -1 | sed 's#/.claude-plugin/plugin.json$##'
    ```
-   If not found, also try:
-   ```
-   find "$HOME/Library/Application Support/Claude" -type d -name "llm-wiki" 2>/dev/null | head -1
-   ```
+   This is the marketplace clone, a stable path that plugin updates pull into. Do NOT use the versioned `~/.claude/plugins/cache/.../llm-wiki/<version>/` folder: each update creates a new one, so a registration pointing there stays on the old version forever.
 
-2. If a plugin directory is found and it contains `server/index.js`:
-   - Run `npm install` inside `<plugin-dir>/server/`
-   - Register the MCP server:
+2. If a plugin directory is found and it contains `server/start.mjs`:
+   - Register the MCP server (`start.mjs` installs the server's npm dependencies on first run, and again whenever `package-lock.json` changes after an update, so no manual `npm install`):
      ```
-     claude mcp add llm-wiki --scope user --env WIKI_PATH="<WIKI_PATH_ABSOLUTE>" -- node "<plugin-dir>/server/index.js"
+     claude mcp remove llm-wiki --scope user
+     claude mcp add llm-wiki --scope user --env WIKI_PATH="<WIKI_PATH_ABSOLUTE>" -- node "<plugin-dir>/server/start.mjs"
      ```
+     Ignore a "not found" error from the remove.
 
 3. If the plugin directory is not found, tell the user:
    "Could not locate the llm-wiki plugin directory automatically. Please run:
-   `claude mcp add llm-wiki --scope user --env WIKI_PATH=<wiki-path> -- node <path-to-plugin>/server/index.js`
-   replacing <path-to-plugin> with the directory where the llm-wiki plugin is installed."
+   `claude mcp add llm-wiki --scope user --env WIKI_PATH=<wiki-path> -- node <plugin-dir>/server/start.mjs`
+   replacing <plugin-dir> with the llm-wiki marketplace clone under ~/.claude/plugins/marketplaces/."
 
 ---
 
