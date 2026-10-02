@@ -55,6 +55,8 @@ function buildTitleMap() {
 
 // --- Conversion functions ---
 
+// Links in pages are same-dir (slug.md, ../../sources/x); in wiki/index.md they are
+// pages/slug.md and ../sources/x. Display text is kept as [[slug|Title]].
 function toObsidian(content) {
   // Convert ## Sources links to [[sources/filename]] first — before the
   // general page-link regex below, since both match a "[...](...)" shape.
@@ -68,26 +70,26 @@ function toObsidian(content) {
   // Replace [Title](slug.md) → [[slug]] — same-dir cross-page link (both
   // pages live in wiki/pages/). Also matches the legacy pages/slug.md form.
   result = result.replace(
-    /\[([^\]]+)\]\((?:pages\/)?([^\/)]+)\.md\)/g,
-    (_, _title, slug) => `[[${slug}]]`
+    /\[([^\]]+)\]\((?:pages\/)?([^\/):]+)\.md\)/g,
+    (_, title, slug) => (title === slug ? `[[${slug}]]` : `[[${slug}|${title}]]`)
   );
 
   return result;
 }
 
-function toStandard(content, titleMap) {
+function toStandard(content, titleMap, { pages = "", sources = "../../sources/" } = {}) {
   // Handle source file wikilinks first — before general slug replacement
   // [[sources/filename.ext]] → [filename.ext](../../sources/filename.ext)
   // (up two levels from wiki/pages/ to reach the wiki-root sources/ dir)
   let result = content.replace(
     /\[\[sources\/([^\]]+)\]\]/g,
-    (_, filename) => `[${filename}](../../sources/${filename})`
+    (_, filename) => `[${filename}](${sources}${filename})`
   );
 
   // Replace [[slug|Display]] → [Display](slug.md) — same dir
   result = result.replace(
     /\[\[([^\]|]+)\|([^\]]+)\]\]/g,
-    (_, slug, display) => `[${display}](${slug}.md)`
+    (_, slug, display) => `[${display}](${pages}${slug}.md)`
   );
 
   // Replace [[slug]] → [Title](slug.md) using title map — same dir
@@ -95,7 +97,7 @@ function toStandard(content, titleMap) {
     /\[\[([^\]|]+)\]\]/g,
     (_, slug) => {
       const title = titleMap[slug] || slug;
-      return `[${title}](${slug}.md)`;
+      return `[${title}](${pages}${slug}.md)`;
     }
   );
 
@@ -150,7 +152,8 @@ for (const { slug, fullPath } of pageFiles()) {
   let body = parsed.content;
 
   if (TARGET === "obsidian") {
-    body = toObsidian(body);
+    // Obsidian mode omits ## Sources (schema); `sources:` frontmatter keeps the record.
+    body = toObsidian(body.replace(/\n## Sources\n[\s\S]*?(?=\n## |$)/, "\n"));
   } else {
     body = toStandard(body, titleMap);
     // Only rebuild Sources section if toStandard didn't already restore it
@@ -160,11 +163,20 @@ for (const { slug, fullPath } of pageFiles()) {
     }
   }
 
-  // Reconstruct full file (frontmatter unchanged)
-  const newContent = matter.stringify(body, parsed.data);
+  // Reattach the original frontmatter text byte-for-byte (matter.stringify would reformat it,
+  // e.g. inline `tags: [a, b]` into a block list).
+  const newContent = (raw.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/)?.[0] || "") + body;
   fs.writeFileSync(fullPath, newContent, "utf8");
   convertedCount++;
   console.log(`  ✓ ${slug}.md`);
+}
+
+// wiki/index.md links every page; convert it too or search/navigation breaks after a switch.
+const indexPath = path.join(WIKI_DIR, "index.md");
+if (fs.existsSync(indexPath)) {
+  const raw = fs.readFileSync(indexPath, "utf8");
+  fs.writeFileSync(indexPath, TARGET === "obsidian" ? toObsidian(raw) : toStandard(raw, titleMap, { pages: "pages/", sources: "../sources/" }), "utf8");
+  console.log("  ✓ wiki/index.md");
 }
 
 // Handle backlinks.md (root-level)

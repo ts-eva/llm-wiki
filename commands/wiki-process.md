@@ -1,68 +1,62 @@
-Batch-process everything new or changed in sources/ — tag with Haiku, organize into wiki pages with Sonnet, commit everything.
+Batch-process everything new or changed in sources/ — tag with Haiku, organize into wiki pages with Sonnet, commit once.
 
-Use this at the end of the day (or whenever you're ready) after adding or editing files in sources/. One pipeline run is cheaper than calling /llm-wiki:wiki-add for each file individually: prompt caches load once, Sonnet sees the full picture for better organization and tag consistency.
+Mode: $ARGUMENTS — `auto` means unattended (the nightly job, `scripts/nightly-process.sh`): never ask a question, baseline unstamped entries, skip the Obsidian offer, print only the final summary.
 
-`sources/index.md` is owned by this pipeline. Never hand-edit it — to change what the wiki says, add or edit a source file and run this command.
+One run per batch is cheaper than processing each note on its own: prompt caches load once and Sonnet sees the full picture for better organization and tag consistency.
 
-## Steps
+**Wiki path:** `<wiki>` is the `wiki` field returned by `prepare_sources` / `source_status` — the folder the llm-wiki server serves. Use it, as an absolute path, for every file and git command. Never take a wiki path from CLAUDE.md, memory, or the current directory.
 
-### Phase 1 — Detect new, changed, and removed sources
+`sources/index.md` is pipeline-owned and large. Never Read or Edit it — the llm-wiki tools read and write single entries: `get_source_entries`, `write_source_entry`, `set_wiki_pages`, `mark_sources`.
 
-1. Read `config.yaml` to load settings
-2. Call the `stamp_created` tool (llm-wiki MCP server). It adds a `created:` date to every note in `sources/` that lacks one (notes written directly in Obsidian or copied in never get one from a tool). It must run before `source_status`: hashes cover the whole file, so stamping afterwards would mark tagged notes as changed. If it stamped anything, commit: `git add sources/ && git commit -m "wiki: stamp missing created dates"`.
-3. Call the `source_status` tool (llm-wiki MCP server). It returns:
-   - **untagged** — files in `sources/` with no index entry
-   - **changed** — files edited since they were tagged (content hash differs); **unstamped** is the subset tagged before change tracking existed
-   - **unorganized** — entries whose wiki pages are missing or were built from an older version of the source
-   - **removed** — index entries whose source file no longer exists
-   - **ignored** — files with `ignore: true` frontmatter (never tagged or organized)
-4. If **unstamped** is non-empty, the index predates change tracking. Ask the user once: re-tag those N entries (a Haiku pass over each), or baseline them as current. For baseline: call `mark_sources` with `stage: "baseline"` and those files, commit `git add sources/index.md && git commit -m "wiki: baseline source hashes"`, then call `source_status` again.
-5. If untagged, changed, unorganized and removed are all empty, tell the user: "Nothing new to process — wiki is up to date." Stop here.
-6. Report what was found:
-   ```
-   Found X new, Y changed, Z removed source(s); W entry/entries to organize.
-   Starting pipeline…
-   ```
+## Phase 1 — Prepare and detect
 
-### Phase 2 — Tag new and changed sources (wiki-tagger, Haiku)
+1. Call `prepare_sources`; its `wiki` field is `<wiki>`. Read `<wiki>/config.yaml` for `git.auto_push`.
+2. `prepare_sources` stamps a `created:` date on notes missing one and renames untagged notes that break the naming rules (relinking `[[wikilinks]]`). If it stamped or renamed anything: `git -C "<wiki>" add -A sources/ wiki/ && git -C "<wiki>" commit -m "wiki: prepare sources"`.
+3. Call `source_status`:
+   - **untagged** — files with no index entry
+   - **changed** — edited since tagged (hash differs); **unstamped** is the subset tagged before change tracking existed
+   - **unorganized** — entries whose wiki pages are missing or built from an older version
+   - **removed** — entries whose source file is gone
+   - **ignored** — `ignore: true` frontmatter, never processed
+4. If **unstamped** is non-empty: in `auto` mode, baseline them. Otherwise ask once: re-tag those N entries (a Haiku pass each) or baseline them as current. Baseline = `mark_sources` with `stage: "baseline"`, then `git -C "<wiki>" add sources/index.md && git -C "<wiki>" commit -m "wiki: baseline source hashes"`, then `source_status` again.
+5. If untagged, changed, unorganized and removed are all empty: say "Nothing new to process — wiki is up to date." and stop.
+6. Report: `Found X new, Y changed, Z removed source(s); W to organize.`
+
+## Phase 2 — Tag (wiki-tagger, Haiku)
 
 Skip if untagged and changed are both empty.
 
-Invoke the `llm-wiki:wiki-tagger` agent once with two labeled lists:
-- **New files** (untagged) — write a new entry for each
-- **Changed files** (changed) — replace each file's existing entry in place, carrying its `wiki-pages:` list forward
+Invoke `llm-wiki:wiki-tagger` with `<wiki>` and two labeled lists, **New files** (untagged) and **Changed files** (changed). More than 25 files: split into batches of 25, one invocation each.
 
-After wiki-tagger completes:
-- Call `mark_sources` with `stage: "tagged"` and every file from both lists. If it reports errors, stop and show them.
-- Commit: `git add sources/index.md wiki/tags.md && git commit -m "wiki: tag sources"`
-- Report: "Tagged X new, re-tagged Y changed source(s)."
+`write_source_entry` stamps each entry's hash as it writes, so no separate mark step. Afterwards call `source_status`: any file still listed untagged or changed was not written — report it and leave it for the next run.
 
-### Phase 3 — Organize into wiki pages (wiki-curator, Sonnet)
+## Phase 3 — Organize (wiki-curator, Sonnet)
 
-1. Call `source_status` again — its **unorganized** list is the work (it now includes the re-tagged sources).
-2. For each **removed** entry, read its `wiki-pages:` from `sources/index.md` before anything else.
+1. Call `source_status`; **unorganized** is the work (it now includes re-tagged sources).
+2. For **removed** files, call `get_source_entries` with them to learn which `wiki-pages:` cited each.
 3. If unorganized and removed are both empty, skip to Phase 4.
-4. Invoke the `llm-wiki:wiki-curator` agent once with:
-   - **Unorganized entries**, each marked *new* (`wiki-pages: []`) or *updated source* (has pages — revise those pages to match the new entry: change facts that changed, remove facts the source no longer supports)
-   - **Removed sources** with the pages that cited them — drop the source from those pages' `sources:` frontmatter and `[[sources/...]]` links, and remove facts only that source supported
-5. After wiki-curator completes:
-   - Call `mark_sources` with `stage: "organized"` and the unorganized files, and `stage: "remove"` with the removed files. If either reports errors, show them.
-   - Call `source_status` once more; unorganized and removed should be empty.
-   - Commit: `git add . && git commit -m "wiki: process batch [YYYY-MM-DD]"` (use today's date)
-   - If `git.auto_push` is true and a remote is configured: `git push`
+4. Invoke `llm-wiki:wiki-curator` once with `<wiki>` and:
+   - **Unorganized** filenames, each marked *new* or *updated source* (it fetches the entries itself)
+   - **Removed** filenames with the pages that cited them
+5. Afterwards: `mark_sources` with `stage: "organized"` for the unorganized files and `stage: "remove"` for the removed ones; show any errors. Call `source_status` once more — unorganized and removed should be empty.
 
-### Phase 4 — Report
+## Phase 4 — Commit and report
 
-Print a summary:
+One commit for the tag + organize work:
+
+```bash
+git -C "<wiki>" add -A -- sources wiki ':(glob)*.md' && git -C "<wiki>" commit -m "wiki: process batch [YYYY-MM-DD]"
+```
+
+If `git.auto_push` is true and a remote is configured: `git -C "<wiki>" push`.
+
 ```
 Pipeline complete.
-  Tagged:    X new source(s)
-  Re-tagged: Y changed source(s)
-  Removed:   Z deleted source(s)
-  Created:   N new wiki page(s)
-  Updated:   M existing page(s)
-  Committed: [commit hash short form]
+  Prepared:  S stamped, R renamed
+  Tagged:    X new, Y re-tagged
+  Removed:   Z
+  Pages:     N created, M updated
+  Commit:    <short hash>
 ```
 
-If in Obsidian mode and Obsidian is not already open, offer: "Open your wiki in Obsidian? (y/N)"
-If user says yes, run: `open -a Obsidian "<wiki-path>"`
+Not in `auto` mode, Obsidian link format, Obsidian not running: offer "Open your wiki in Obsidian? (y/N)" — yes runs `open -a Obsidian "<wiki>"`.

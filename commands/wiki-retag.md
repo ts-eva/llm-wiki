@@ -1,27 +1,10 @@
-Scan your tag list for near-duplicates and consolidate them. Run occasionally when you notice the tag list getting messy.
+Find near-duplicate tags and merge them. Run occasionally when the tag list gets messy.
 
 ## Steps
 
-1. Read `config.yaml` to get `mcp.path`
-2. Read `wiki/tags.md` — extract all canonical tags
-
-### Phase 1 — Detect near-duplicates (wiki-analyst, Haiku)
-
-Invoke the `llm-wiki:wiki-analyst` agent (Haiku) with the contents of `wiki/tags.md`. It will return a numbered list of proposed merges.
-
-### Phase 2 — User confirms
-
-Show the proposed merges. Ask: "Apply these consolidations? (y/N) Or type the numbers to skip (e.g. 2,3)"
-
-If user says no or skips all: stop here.
-
-### Phase 3 — Rename across wiki (Sonnet)
-
-For each confirmed merge:
-1. Update all pages in `wiki/pages/` — replace old tag in frontmatter `tags:` array
-2. Update `wiki/tags.md` — remove the deprecated tag entry
-3. Note: do NOT do a naive find-replace on content body — only update the frontmatter `tags:` field
-
-Commit: `git add . && git commit -m "wiki: retag — merge [old] into [kept] (N pages updated)"`
-
-Report: how many pages were updated per merge.
+1. Call `source_status`; its `wiki` field is `<wiki>`.
+2. Invoke `llm-wiki:wiki-analyst` (Haiku) with the contents of `<wiki>/wiki/tags.md`; it returns numbered merge proposals (`Keep X, remove Y`).
+3. Show them. Ask: "Apply these? (y/N), or numbers to skip (e.g. 2,3)". No → stop.
+4. For each confirmed merge call `rename_tag` with `from` (removed) and `to` (kept). It rewrites page frontmatter, `sources/index.md` entry tags and `wiki/tags.md` — never body text. Report any `skipped` pages (block-style YAML tag lists) for a manual edit.
+5. Commit: `git -C "<wiki>" add -A wiki/ sources/index.md && git commit -m "wiki: retag — merge <removed> into <kept>"`.
+6. Report pages and entries updated per merge.

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { sourceStatus, markSources } from "./sources-state.js";
+import { sourceStatus, markSources, writeSourceEntry, getSourceEntries, setWikiPages } from "./sources-state.js";
 
 function wiki() {
   const w = fs.mkdtempSync(path.join(os.tmpdir(), "llm-wiki-state-"));
@@ -69,4 +69,27 @@ test("organized requires wiki-pages; remove only drops entries whose file is gon
 
 test("rejects unknown stage", () => {
   assert.ok(markSources(wiki(), ["b.md"], "bogus").error);
+});
+
+test("headers inside the index's format comment are not entries", () => {
+  const w = wiki();
+  const p = path.join(w, "sources", "index.md");
+  fs.writeFileSync(p, "# Sources Index\n<!-- Format:\n## sources/<filename>\nsummary: x\n-->\n" + index(w).replace("# Sources Index\n", ""));
+  assert.deepEqual(sourceStatus(w).removed, ["gone.md"]);
+});
+
+test("writeSourceEntry stamps hash and date, carries wiki-pages; getSourceEntries returns one section", () => {
+  const w = wiki();
+  edit(w, "c.md", "---\ncreated: 09/30/2026\n---\ngamma");
+  assert.deepEqual(writeSourceEntry(w, "c.md", "## sources/c.md\ndate: 1999-01-01\ntype: other\nsummary: C\nhash: bogus\nwiki-pages: [x]"), { written: "c.md", replaced: false });
+  assert.deepEqual(sourceStatus(w).untagged, []);
+  assert.deepEqual(sourceStatus(w).unorganized.includes("c.md"), true);
+  const c = getSourceEntries(w, ["c.md", "nope.md"]).entries;
+  assert.match(c["c.md"], /^## sources\/c\.md\ndate: 2026-09-30\ntype: other\nsummary: C\nhash: \w{12}\nwiki-pages: \[\]$/);
+  assert.equal(c["nope.md"], null);
+  writeSourceEntry(w, "a note.md", "summary: A2");
+  assert.match(getSourceEntries(w, ["a note.md"]).entries["a note.md"], /summary: A2\nhash: \w{12}\nwiki-pages: \[wiki\/pages\/a\.md\]/);
+  assert.deepEqual(setWikiPages(w, "c.md", ["c-page", "wiki/pages/d.md"]).wikiPages, ["wiki/pages/c-page.md", "wiki/pages/d.md"]);
+  assert.deepEqual(markSources(w, ["c.md"], "organized").errors, []);
+  assert.equal(sourceStatus(w).unorganized.includes("c.md"), false);
 });

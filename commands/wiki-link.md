@@ -1,33 +1,15 @@
-Scan wiki pages for unlinked mentions of other page titles and suggest adding links. Run occasionally as the wiki grows to keep the knowledge graph dense.
+Find wiki pages that mention another page's title without linking it, and offer to add the links. Run occasionally to keep the graph dense.
 
 ## Steps
 
-1. Read `config.yaml` to get `mcp.path` and `wiki.link_format`
-2. Read `wiki/index.md` — build a map of all page titles → slugs
-3. Invoke `llm-wiki:wiki-analyst` (Haiku) with the title map and all page content to find:
-   - Pages that mention another page's title in their body but don't link to it
-   - Return as: `slug → [{ mentioned_title, slug, line_excerpt }]`
-4. If nothing found: "All page titles are linked — graph looks good."
-5. Otherwise display grouped by page:
-
-```
-event-sourcing.md mentions but doesn't link:
-  - "Postgres" → postgres.md  (line: "...works well with Postgres for...")
-  - "CQRS" → cqrs.md          (line: "...often paired with CQRS...")
-
-payments-architecture.md mentions but doesn't link:
-  - "Stripe" → stripe.md      (line: "...Stripe handles the charge...")
-```
-
-6. Ask: "Add these links? (A)ll, (S)elect, (N)o"
-   - All: add all suggested links
-   - Select: user types page numbers to include (e.g. `1,3`)
-   - No: exit
-
-7. For each confirmed link, edit the page — wrap the first occurrence of the title in the body with a link:
-   - Standard mode: `[Title](slug.md)` (same directory — both pages live in `wiki/pages/`)
-   - Obsidian mode: `[[slug]]`
-   - Do NOT link occurrences inside existing links, headings, or frontmatter
-
-8. Update `log.md` (root): `## [YYYY-MM-DD] update | <page title>` for each edited page
-9. Commit: `git add . && git commit -m "wiki: add missing links (N pages updated)"`
+1. Call `find_unlinked_mentions` (free — no model reads the pages). Wiki path `<wiki>` = the `wiki` field of `source_status`; read `<wiki>/config.yaml` for `wiki.link_format`.
+2. `count` is 0: "All page titles are linked — graph looks good." Stop.
+3. Show the mentions grouped by page, numbered:
+   ```
+   event-sourcing.md mentions but doesn't link:
+     1. "Postgres" → postgres  (…works well with Postgres for…)
+   ```
+4. Ask: "Add these links? (A)ll, (S)elect numbers, (N)o".
+5. For each confirmed link, wrap the first prose occurrence of the title: standard `[Title](slug.md)`, obsidian `[[slug|Title]]`. Never inside links, headings, code or frontmatter.
+6. Record the edits with one `append_log` call (`update`, page title each).
+7. Commit: `git -C "<wiki>" add wiki/pages log.md && git commit -m "wiki: add missing links (N pages)"`.

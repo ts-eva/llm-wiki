@@ -8,10 +8,13 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import fs from "fs";
 import path from "path";
-import { execSync, execFileSync } from "child_process";
+import { execFileSync } from "child_process";
 import { sourceFilename } from "./source-filename.js";
-import { sourceStatus, markSources } from "./sources-state.js";
-import { stampCreated } from "./stamp-created.js";
+import { sourceStatus, markSources, getSourceEntries, writeSourceEntry, setWikiPages } from "./sources-state.js";
+import { prepareSources } from "./prepare-sources.js";
+import { searchWiki } from "./search.js";
+import { wikiStats, getRecent, findUnlinkedMentions, renameTag, appendLog, removePage } from "./maintenance.js";
+import { readDateFormat, formatDate } from "./dates.js";
 import matter from "gray-matter";
 
 const WIKI_PATH = process.env.WIKI_PATH
@@ -20,6 +23,7 @@ const WIKI_PATH = process.env.WIKI_PATH
 
 const PAGES_DIR = path.join(WIKI_PATH, "wiki", "pages");
 const WIKI_DIR  = path.join(WIKI_PATH, "wiki");
+const VERSION = JSON.parse(fs.readFileSync(new URL("../.claude-plugin/plugin.json", import.meta.url), "utf8")).version;
 
 // --- Helpers ---
 
@@ -27,12 +31,12 @@ function readMarkdownFiles(dir) {
   if (!fs.existsSync(dir)) return [];
   return fs
     .readdirSync(dir)
-    .filter((f) => f.endsWith(".md") && f !== ".gitkeep")
+    .filter((f) => f.endsWith(".md"))
     .map((f) => ({ file: f, slug: f.replace(/\.md$/, "") }));
 }
 
 function readPage(slug) {
-  const filePath = path.join(PAGES_DIR, `${slug}.md`);
+  const filePath = path.join(PAGES_DIR, `${path.basename(String(slug))}.md`);
   if (!fs.existsSync(filePath)) return null;
   const raw = fs.readFileSync(filePath, "utf8");
   const parsed = matter(raw);
@@ -51,95 +55,9 @@ function readRootFile(name) {
   return fs.readFileSync(filePath, "utf8");
 }
 
-function writeWikiFile(name, content) {
-  const filePath = path.join(WIKI_DIR, name);
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, content, "utf8");
-}
-
-function readDateFormat() {
-  const configPath = path.join(WIKI_PATH, "config.yaml");
-  if (!fs.existsSync(configPath)) return "MM/DD/YYYY";
-  const raw = fs.readFileSync(configPath, "utf8");
-  return raw.match(/date_format:\s*["']?([^"'\n]+)["']?/)?.[1]?.trim() || "MM/DD/YYYY";
-}
-
-function today() {
-  return new Date().toISOString().split("T")[0]; // ISO always used for log.md headers
-}
-
-function todayFormatted() {
-  const d = new Date();
-  const fmt = readDateFormat();
-  const yyyy = d.getFullYear().toString();
-  const mm = (d.getMonth() + 1).toString().padStart(2, "0");
-  const dd = d.getDate().toString().padStart(2, "0");
-  return fmt.replace("YYYY", yyyy).replace("MM", mm).replace("DD", dd);
-}
-
-function excerpt(content, query, maxLen = 150) {
-  const idx = content.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return content.slice(0, maxLen).trim() + "…";
-  const start = Math.max(0, idx - 40);
-  const end = Math.min(content.length, idx + 100);
-  return (start > 0 ? "…" : "") + content.slice(start, end).trim() + (end < content.length ? "…" : "");
-}
+const todayFormatted = () => formatDate(new Date(), readDateFormat(WIKI_PATH));
 
 // --- Tool handlers ---
-
-function parseIndexMd() {
-  const raw = readWikiFile("index.md");
-  const entries = [];
-  let currentType = null;
-  for (const line of raw.split("\n")) {
-    const typeMatch = line.match(/^## (.+)/);
-    if (typeMatch) { currentType = typeMatch[1].toLowerCase().replace(/s$/, ""); continue; }
-    const entryMatch = line.match(/^- \[(.+?)\]\(pages\/(.+?)\.md\)\s*[—–-]\s*(.+)/);
-    if (entryMatch) entries.push({ title: entryMatch[1], slug: entryMatch[2], summary: entryMatch[3].trim(), type: currentType });
-  }
-  return entries;
-}
-
-function searchWiki({ query, tags, include_sensitive = false }) {
-  const q = (query || "").toLowerCase();
-
-  // Index scan first, content scan as fallback
-  const results = [];
-  const seenSlugs = new Set();
-
-  // Pass 1: fast index scan (no file reads)
-  for (const entry of parseIndexMd()) {
-    const titleMatch = entry.title.toLowerCase().includes(q);
-    const summaryMatch = entry.summary.toLowerCase().includes(q);
-    if (titleMatch || summaryMatch) {
-      const page = readPage(entry.slug);
-      if (!page) continue;
-      if (!include_sensitive && page.frontmatter.sensitive === true) continue;
-      if (tags?.length && !tags.some((t) => page.frontmatter.tags?.includes(t))) continue;
-      results.push({ slug: entry.slug, title: entry.title, type: entry.type, summary: entry.summary, matchedIn: "index" });
-      seenSlugs.add(entry.slug);
-    }
-  }
-
-  // Pass 2: full content scan only if index gave nothing
-  if (results.length === 0) {
-    for (const { slug } of readMarkdownFiles(PAGES_DIR)) {
-      if (seenSlugs.has(slug)) continue;
-      const page = readPage(slug);
-      if (!page) continue;
-      const { frontmatter, content } = page;
-      if (!include_sensitive && frontmatter.sensitive === true) continue;
-      const tagMatch = tags?.length ? tags.some((t) => frontmatter.tags?.includes(t)) : false;
-      const contentMatch = content.toLowerCase().includes(q);
-      if (contentMatch || tagMatch) {
-        results.push({ slug, title: frontmatter.title || slug, type: frontmatter.type, tags: frontmatter.tags || [], excerpt: excerpt(content, query), matchedIn: "content" });
-      }
-    }
-  }
-
-  if (!results.length) return { found: false, message: `No pages found matching "${query}"` };
-  return { found: true, count: results.length, results };
-}
 
 function getPage({ slug }) {
   const page = readPage(slug);
@@ -180,24 +98,7 @@ function listTags() {
   return { count: tags.length, tags };
 }
 
-function getRecent({ days = 7 } = {}) {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
-  const cutoffStr = cutoff.toISOString().split("T")[0];
-
-  const raw = readRootFile("log.md");
-  const entries = [];
-  for (const line of raw.split("\n")) {
-    const match = line.match(/^## \[(\d{4}-\d{2}-\d{2})\] (\w+) \| (.+)$/);
-    if (!match) continue;
-    const [, date, action, title] = match;
-    if (date >= cutoffStr) entries.push({ date, action, title });
-  }
-  entries.sort((a, b) => b.date.localeCompare(a.date));
-  return { days, since: cutoffStr, count: entries.length, entries };
-}
-
-function saveSource({ content, title, source_url }) {
+function saveSource({ content, title, source_url, type }) {
   if (!content) return { error: "content is required" };
 
   const sourcesDir = path.join(WIKI_PATH, "sources");
@@ -208,7 +109,7 @@ function saveSource({ content, title, source_url }) {
   const existed = fs.existsSync(filePath);
 
   // Keep the original created date and any other frontmatter (e.g. ignore: true) on update.
-  const managed = new Set(["created", "updated", "type", "title", "source_url"]);
+  const managed = new Set(["created", "updated", "title", "source_url", ...(type ? ["type"] : [])]);
   let created = todayFormatted();
   const kept = [];
   if (existed) {
@@ -224,7 +125,7 @@ function saveSource({ content, title, source_url }) {
 
   const frontmatter = ["---", `created: ${created}`];
   if (existed) frontmatter.push(`updated: ${todayFormatted()}`);
-  frontmatter.push("type: conversation");
+  if (type) frontmatter.push(`type: ${type}`);
   if (title) frontmatter.push(`title: ${JSON.stringify(title)}`);
   if (source_url) frontmatter.push(`source_url: ${JSON.stringify(source_url)}`);
   frontmatter.push(...kept, "---", "");
@@ -276,7 +177,7 @@ function getBacklinks({ source_file }) {
 // --- Server setup ---
 
 const server = new Server(
-  { name: "llm-wiki", version: "1.0.0" },
+  { name: "llm-wiki", version: VERSION },
   { capabilities: { tools: {}, resources: {} } }
 );
 
@@ -284,15 +185,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: "search_wiki",
-      description: "Search wiki pages by text and/or tags. Sensitive pages are excluded by default.",
+      description: "Search wiki pages AND sources/ (including notes not yet processed) by words and/or tags. Every word must match somewhere (any order); falls back to best partial matches. Returns ranked pages and sources with short excerpts. Sensitive notes excluded by default.",
       inputSchema: {
         type: "object",
         properties: {
-          query: { type: "string", description: "Text to search for" },
-          tags: { type: "array", items: { type: "string" }, description: "Filter by tags" },
-          include_sensitive: { type: "boolean", description: "Include pages marked sensitive: true (default false)" },
+          query: { type: "string", description: "Words to search for (ticket keys like HW-2538 kept whole)" },
+          tags: { type: "array", items: { type: "string" }, description: "Only return notes carrying at least one of these tags" },
+          include_sensitive: { type: "boolean", description: "Include notes marked sensitive: true (default false)" },
+          limit: { type: "number", description: "Max pages (default 10; sources get half)" },
         },
-        required: ["query"],
       },
     },
     {
@@ -332,36 +233,114 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "get_recent",
-      description: "Return wiki changes from the last N days (default 7). Reads log.md — free operation.",
+      description: "What changed recently: log.md entries plus sources created/updated in the window (including unprocessed captures). Default last 7 days; or since/until ISO dates.",
       inputSchema: {
         type: "object",
         properties: {
-          days: { type: "number", description: "Number of days to look back (default 7)" },
+          days: { type: "number", description: "Days to look back (default 7)" },
+          since: { type: "string", description: "Start date YYYY-MM-DD (inclusive), overrides days" },
+          until: { type: "string", description: "End date YYYY-MM-DD (inclusive, default today)" },
         },
       },
     },
     {
       name: "save_source",
-      description: "Save content to sources/ for later processing via /llm-wiki:wiki-process. Use this from any ambient session to capture notes without creating a wiki page immediately. If a source with the same title already exists, it is updated in place (content replaced, created date and other frontmatter kept) — read the existing file first and pass the full merged content.",
+      description: "Capture a note into sources/ (the one write path; /llm-wiki:wiki-add and /llm-wiki:wiki-session call this). Applies the naming rules, writes created:/updated: frontmatter, commits. Searchable immediately via search_wiki; /llm-wiki:wiki-process organizes it into pages later. Pass content WITHOUT frontmatter. If a source with the same title already exists, it is updated in place (content replaced, created date and other frontmatter kept) — read the existing file first and pass the full merged content.",
       inputSchema: {
         type: "object",
         properties: {
           content: { type: "string", description: "The content to save" },
           title: { type: "string", description: "Optional title — becomes the filename as-is, lowercased, spaces kept (e.g. \"payments architecture review.md\"). Same title = same note: updates the existing file" },
           source_url: { type: "string", description: "Optional URL the content came from" },
+          type: { type: "string", description: "Optional note type for frontmatter, e.g. conversation, article, meeting-notes" },
         },
         required: ["content"],
       },
     },
     {
       name: "source_status",
-      description: "Pipeline status of sources/: untagged (new files), changed (edited since tagging, incl. unstamped), unorganized (wiki pages missing or out of date), removed (index entries whose file is gone), ignored. Used by /wiki-process and /wiki-autotag.",
+      description: "Pipeline status of sources/ (plus `wiki`: the wiki path this server serves — use it for every file path and git command): untagged (new files), changed (edited since tagging, incl. unstamped), unorganized (wiki pages missing or out of date), removed (index entries whose file is gone), ignored. Used by /wiki-process and /wiki-autotag.",
       inputSchema: { type: "object", properties: {} },
     },
     {
-      name: "stamp_created",
-      description: "Pipeline-only: add a `created:` frontmatter date to every note in sources/ missing one (incl. ignored notes; never overwrites). Date = earlier of git first-add and file birth time, in config date_format. Run before source_status so stamping doesn't count as an edit.",
+      name: "prepare_sources",
+      description: "Pipeline-only, first step of /wiki-process: stamp a created: date on every note in sources/ missing one, and rename untagged notes that break the naming rules (relinking [[wikilinks]]). Run before source_status.",
       inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "get_source_entries",
+      description: "Pipeline: return only the named sections of sources/index.md (never read the whole file — it is large).",
+      inputSchema: {
+        type: "object",
+        properties: { files: { type: "array", items: { type: "string" }, description: "Source filenames as in sources/" } },
+        required: ["files"],
+      },
+    },
+    {
+      name: "write_source_entry",
+      description: "Pipeline (wiki-tagger): write or replace one sources/index.md entry. Pass the entry fields (type, tags, summary, key-points, action-items, notable-quotes). The server sets date: from created:, stamps hash:, and carries wiki-pages:/organized-hash: forward.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          file: { type: "string", description: "Source filename as in sources/" },
+          entry: { type: "string", description: "Entry fields as markdown lines, no header" },
+        },
+        required: ["file", "entry"],
+      },
+    },
+    {
+      name: "set_wiki_pages",
+      description: "Pipeline (wiki-curator): set one sources/index.md entry's wiki-pages list (slugs or wiki/pages/<slug>.md).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          file: { type: "string" },
+          pages: { type: "array", items: { type: "string" } },
+        },
+        required: ["file", "pages"],
+      },
+    },
+    {
+      name: "append_log",
+      description: "Pipeline (wiki-curator) and maintenance commands: append entries to log.md (today's date) without reading it.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          entries: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: { action: { type: "string", enum: ["add", "update", "delete", "ingest", "restructure"] }, title: { type: "string" } },
+              required: ["action", "title"],
+            },
+          },
+        },
+        required: ["entries"],
+      },
+    },
+    {
+      name: "remove_page",
+      description: "Pipeline (wiki-curator): delete a wiki page whose only sources were removed, and drop its wiki/index.md line.",
+      inputSchema: { type: "object", properties: { slug: { type: "string" } }, required: ["slug"] },
+    },
+    {
+      name: "wiki_stats",
+      description: "Counts for /wiki-stats: pages by type, top tags, source pipeline state, recent log activity. Free.",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "find_unlinked_mentions",
+      description: "For /wiki-link: pages that mention another page's title in prose without linking it. Free.",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "rename_tag",
+      description: "For /wiki-retag: rename or merge a tag across page frontmatter, sources/index.md entries and wiki/tags.md. Does not commit.",
+      inputSchema: {
+        type: "object",
+        properties: { from: { type: "string" }, to: { type: "string" } },
+        required: ["from", "to"],
+      },
     },
     {
       name: "mark_sources",
@@ -379,22 +358,31 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
+  const { name, arguments: args = {} } = request.params;
   let result;
 
-  if (name === "search_wiki") result = searchWiki(args);
+  if (name === "search_wiki") result = searchWiki(WIKI_PATH, args);
   else if (name === "get_page") result = getPage(args);
   else if (name === "list_pages") result = listPages(args);
   else if (name === "list_tags") result = listTags();
   else if (name === "get_backlinks") result = getBacklinks(args);
-  else if (name === "get_recent") result = getRecent(args);
+  else if (name === "get_recent") result = getRecent(WIKI_PATH, args);
   else if (name === "save_source") result = saveSource(args);
-  else if (name === "stamp_created") result = stampCreated(WIKI_PATH, readDateFormat());
-  else if (name === "source_status") result = sourceStatus(WIKI_PATH);
+  else if (name === "prepare_sources") result = { wiki: WIKI_PATH, ...prepareSources(WIKI_PATH, readDateFormat(WIKI_PATH)) };
+  else if (name === "get_source_entries") result = getSourceEntries(WIKI_PATH, args.files || []);
+  else if (name === "write_source_entry") result = writeSourceEntry(WIKI_PATH, args.file, args.entry || "");
+  else if (name === "set_wiki_pages") result = setWikiPages(WIKI_PATH, args.file, args.pages || []);
+  else if (name === "append_log") result = appendLog(WIKI_PATH, args.entries);
+  else if (name === "remove_page") result = removePage(WIKI_PATH, args.slug);
+  else if (name === "wiki_stats") result = wikiStats(WIKI_PATH);
+  else if (name === "find_unlinked_mentions") result = findUnlinkedMentions(WIKI_PATH);
+  else if (name === "rename_tag") result = renameTag(WIKI_PATH, args.from, args.to);
+  else if (name === "source_status") result = { wiki: WIKI_PATH, ...sourceStatus(WIKI_PATH) };
   else if (name === "mark_sources") result = markSources(WIKI_PATH, args.files || [], args.stage);
   else result = { error: `Unknown tool: ${name}` };
 
-  return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  // Compact JSON: tool results are model context, indentation is pure token cost.
+  return { content: [{ type: "text", text: JSON.stringify(result) }] };
 });
 
 server.setRequestHandler(ListResourcesRequestSchema, async () => ({
