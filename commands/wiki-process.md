@@ -1,6 +1,6 @@
 Batch-process everything new or changed in sources/ — tag with Haiku, organize into wiki pages with Sonnet, commit once.
 
-Mode: $ARGUMENTS — `auto` means unattended (the nightly job, `scripts/nightly-process.sh`): never ask a question, baseline unstamped entries, skip the Obsidian offer, print only the final summary.
+Mode: $ARGUMENTS — `auto` means unattended (the daily job, `scripts/nightly-process.sh`): never ask a question, baseline unstamped entries, skip the Obsidian offer, print only the final summary.
 
 One run per batch is cheaper than processing each note on its own: prompt caches load once and Sonnet sees the full picture for better organization and tag consistency.
 

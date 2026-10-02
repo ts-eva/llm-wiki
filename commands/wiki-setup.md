@@ -498,7 +498,7 @@ git commit -m "wiki: init"
    `claude mcp add llm-wiki --scope user --env WIKI_PATH=<wiki-path> -- node <plugin-dir>/server/start.mjs`
    replacing <plugin-dir> with the llm-wiki marketplace clone under ~/.claude/plugins/marketplaces/."
 
-4. Offer the nightly job with `AskUserQuestion` (header `Nightly`): "Process new notes automatically every night? It costs nothing on nights with no new notes." Yes → `bash "<plugin-dir>/scripts/schedule.sh" install 21:00` (macOS launchd; prints a crontab line elsewhere). Also available later via `/llm-wiki:wiki-schedule`.
+4. Offer the daily job with `AskUserQuestion` (header `Daily job`): "Process new notes automatically once a day? It costs nothing on days with no new notes. Pick a time your machine is usually awake." Yes → follow `/llm-wiki:wiki-schedule install <time>` (default 16:30; needs a `claude setup-token` token file for cron).
 
 ---
 
@@ -537,16 +537,16 @@ Print a summary:
 <if remote> ✓ Remote configured and pushed to <url>
 <if obsidian> ✓ Obsidian vault opened
 <if memory> ✓ Claude memory enabled — wiki context available in every session
-<if nightly> ✓ Nightly processing at 21:00
+<if daily> ✓ Daily processing at <time>
 
 Workflow:
   Collect notes anytime → drop files in sources/ or /llm-wiki:wiki-add (searchable at once)
-  Nightly job or /llm-wiki:wiki-process → Haiku tags, Sonnet organizes, one batch
+  Daily job or /llm-wiki:wiki-process → Haiku tags, Sonnet organizes, one batch
 
 Commands:
   /llm-wiki:wiki-add      — add a single note from any Claude session
   /llm-wiki:wiki-process  — batch process everything new in sources/ at once
-  /llm-wiki:wiki-schedule — install/remove the nightly processing job
+  /llm-wiki:wiki-schedule — install/remove the daily processing job
   /llm-wiki:wiki-search   — search your wiki
   /llm-wiki:wiki-open     — open your wiki in Obsidian (Obsidian mode only)
   /llm-wiki:wiki-commit   — manual git commit

@@ -1,6 +1,6 @@
 Tag new or changed sources/ files with wiki-tagger only (no page organizing). Silent when there is nothing to do.
 
-Prefer the nightly job (`/llm-wiki:wiki-schedule`), which runs the full `/llm-wiki:wiki-process auto` and costs nothing on nights with no new notes.
+Prefer the daily job (`/llm-wiki:wiki-schedule`), which runs the full `/llm-wiki:wiki-process auto` and costs nothing on nights with no new notes.
 
 ## Steps
 
