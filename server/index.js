@@ -11,6 +11,7 @@ import path from "path";
 import { execSync, execFileSync } from "child_process";
 import { sourceFilename } from "./source-filename.js";
 import { sourceStatus, markSources } from "./sources-state.js";
+import { stampCreated } from "./stamp-created.js";
 import matter from "gray-matter";
 
 const WIKI_PATH = process.env.WIKI_PATH
@@ -358,6 +359,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: { type: "object", properties: {} },
     },
     {
+      name: "stamp_created",
+      description: "Pipeline-only: add a `created:` frontmatter date to every note in sources/ missing one (incl. ignored notes; never overwrites). Date = earlier of git first-add and file birth time, in config date_format. Run before source_status so stamping doesn't count as an edit.",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
       name: "mark_sources",
       description: "Pipeline-only: stamp sources/index.md entries after a pipeline step. stage 'tagged' after wiki-tagger wrote/replaced entries; 'organized' after wiki-curator updated their pages; 'remove' drops entries whose source file was deleted; 'baseline' one-time stamp for entries tagged before change tracking.",
       inputSchema: {
@@ -383,6 +389,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   else if (name === "get_backlinks") result = getBacklinks(args);
   else if (name === "get_recent") result = getRecent(args);
   else if (name === "save_source") result = saveSource(args);
+  else if (name === "stamp_created") result = stampCreated(WIKI_PATH, readDateFormat());
   else if (name === "source_status") result = sourceStatus(WIKI_PATH);
   else if (name === "mark_sources") result = markSources(WIKI_PATH, args.files || [], args.stage);
   else result = { error: `Unknown tool: ${name}` };

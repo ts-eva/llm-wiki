@@ -68,7 +68,7 @@ const lines = [
   "## Naming rules (checked against sources/ — break these and the user has to clean up)",
   "- Sources are named by readable title: lowercase, **spaces**, no slug, no `session-`/`project-` prefix.",
   "- Hyphens only inside names that contain one (`llm-wiki`, `x-ray`) — never as word separators.",
-  "- Session logs are ordinary sources: `save_source` with title `YYYY-MM-DD short readable topic` (zero-padded date). Never `_HHMM`, never a `-session` suffix, never a separate `sessions/` folder.",
+  "- Session logs are ordinary sources named by readable topic, no date in the name (`created:` frontmatter holds it). Never `_HHMM`, never a `-session` suffix, never a separate `sessions/` folder.",
   "- `sources/` is the editable layer: update facts by editing the source file in place and committing; `/llm-wiki:wiki-process` picks up the change by hash and revises the generated pages. Never hand-edit generated wiki pages to change facts.",
   "- Wiki pages (`wiki/pages/`) use `kebab-case.md` slugs — that is the one place hyphens are correct.",
   "",

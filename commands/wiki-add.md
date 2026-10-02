@@ -51,7 +51,7 @@ created: <formatted-date>
 
 ## Naming
 
-Sources are named by readable title: lowercase, **spaces**, no kebab-case slug, no `session-`/`project-` prefix. Hyphens only inside names that contain one (`llm-wiki`, `x-ray`). Session logs: `YYYY-MM-DD short readable topic`. Other sources carry no date in the name (the `created:` frontmatter holds it).
+Sources are named by readable title: lowercase, **spaces**, no kebab-case slug, no `session-`/`project-` prefix. Hyphens only inside names that contain one (`llm-wiki`, `x-ray`). No date in the name, session logs included (the `created:` frontmatter holds it).
 
 ## Saving
 

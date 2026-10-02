@@ -9,15 +9,16 @@ Use this at the end of the day (or whenever you're ready) after adding or editin
 ### Phase 1 — Detect new, changed, and removed sources
 
 1. Read `config.yaml` to load settings
-2. Call the `source_status` tool (llm-wiki MCP server). It returns:
+2. Call the `stamp_created` tool (llm-wiki MCP server). It adds a `created:` date to every note in `sources/` that lacks one (notes written directly in Obsidian or copied in never get one from a tool). It must run before `source_status`: hashes cover the whole file, so stamping afterwards would mark tagged notes as changed. If it stamped anything, commit: `git add sources/ && git commit -m "wiki: stamp missing created dates"`.
+3. Call the `source_status` tool (llm-wiki MCP server). It returns:
    - **untagged** — files in `sources/` with no index entry
    - **changed** — files edited since they were tagged (content hash differs); **unstamped** is the subset tagged before change tracking existed
    - **unorganized** — entries whose wiki pages are missing or were built from an older version of the source
    - **removed** — index entries whose source file no longer exists
    - **ignored** — files with `ignore: true` frontmatter (never tagged or organized)
-3. If **unstamped** is non-empty, the index predates change tracking. Ask the user once: re-tag those N entries (a Haiku pass over each), or baseline them as current. For baseline: call `mark_sources` with `stage: "baseline"` and those files, commit `git add sources/index.md && git commit -m "wiki: baseline source hashes"`, then call `source_status` again.
-4. If untagged, changed, unorganized and removed are all empty, tell the user: "Nothing new to process — wiki is up to date." Stop here.
-5. Report what was found:
+4. If **unstamped** is non-empty, the index predates change tracking. Ask the user once: re-tag those N entries (a Haiku pass over each), or baseline them as current. For baseline: call `mark_sources` with `stage: "baseline"` and those files, commit `git add sources/index.md && git commit -m "wiki: baseline source hashes"`, then call `source_status` again.
+5. If untagged, changed, unorganized and removed are all empty, tell the user: "Nothing new to process — wiki is up to date." Stop here.
+6. Report what was found:
    ```
    Found X new, Y changed, Z removed source(s); W entry/entries to organize.
    Starting pipeline…
