@@ -12,4 +12,4 @@ Find wiki pages that mention another page's title without linking it, and offer 
 4. Ask: "Add these links? (A)ll, (S)elect numbers, (N)o".
 5. For each confirmed link, wrap the first prose occurrence of the title: standard `[Title](slug.md)`, obsidian `[[slug|Title]]`. Never inside links, headings, code or frontmatter.
 6. Record the edits with one `append_log` call (`update`, page title each).
-7. Commit: `git -C "<wiki>" add wiki/pages log.md && git commit -m "wiki: add missing links (N pages)"`.
+7. Commit: `commit_files` with `wiki/pages/<slug>.md` for each page you edited and `log.md`, message `wiki: add missing links (N pages)`.

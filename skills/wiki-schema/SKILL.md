@@ -20,6 +20,7 @@ Files in `sources/` are named by **readable title**, not slug — in Obsidian th
 - Hyphens only where they are part of a name (`llm-wiki`, `x-ray`); no en/em dashes as separators
 - Strip characters that break on some OS or in Obsidian links: `/ \ : * ? " < > | # ^ [ ]` plus `$` and backtick (they expand inside double-quoted shell paths); drop a trailing `.md` from the title; no leading/trailing dots or spaces; max ~180 chars
 - Same title = same note: saving with an existing title (case-insensitive) updates that file in place — read it first and write the full merged content; `created:` is kept and `updated:` set. Only untitled saves get a ` (2)`, ` (3)`, … suffix
+- A new title close to an existing note (shared ticket key, or mostly the same words) is refused with the similar titles: merge into one of them, or save again with `new: true` if it really is a different topic
 - Always quote paths in shell commands (`git add "sources/my title.md"`) and in YAML lists (`sources: ["sources/my title.md"]`)
 
 `save_source` applies these rules automatically (`server/source-filename.js`), and `/llm-wiki:wiki-process` renames untagged notes written another way (Obsidian, copied in) to match.
@@ -113,7 +114,7 @@ wiki:
   date_format: "MM/DD/YYYY"   # date display format — YYYY-MM-DD for ISO, DD/MM/YYYY for European
 
 git:
-  auto_commit: true           # commit before session ends
+  auto_commit: true           # at session end, commit the wiki files that session edited
   auto_push: false            # push after auto-commit (only if remote is set)
   auto_pull: true             # pull at session start (only if remote is set)
 

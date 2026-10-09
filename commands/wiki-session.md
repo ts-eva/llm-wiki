@@ -24,4 +24,6 @@ Write what someone reading this in 3 months needs, 150–300 words, selective, n
 
 Call `save_source` with `title`, `type: "conversation"`, and `content` (no frontmatter) starting with `## Session: <topic>`.
 
+`saved: false` with `similar`: if this session continues one of those notes, read it, merge this summary in, and save under its title; otherwise save again with `new: true`.
+
 Tell the user: "Session saved to <file>. Searchable now; organized into pages on the next /llm-wiki:wiki-process."

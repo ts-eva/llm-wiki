@@ -11,14 +11,14 @@ One run per batch is cheaper than processing each note on its own: prompt caches
 ## Phase 1 — Prepare and detect
 
 1. Call `prepare_sources`; its `wiki` field is `<wiki>`. Read `<wiki>/config.yaml` for `git.auto_push`.
-2. `prepare_sources` stamps a `created:` date on notes missing one and renames untagged notes that break the naming rules (relinking `[[wikilinks]]`). If it stamped or renamed anything: `git -C "<wiki>" add -A sources/ wiki/ && git -C "<wiki>" commit -m "wiki: prepare sources"`.
+2. `prepare_sources` stamps a `created:` date on notes missing one and renames untagged notes that break the naming rules (relinking `[[wikilinks]]`). If its `files` list is non-empty: `commit_files` with exactly those `files` and message `wiki: prepare sources`.
 3. Call `source_status`:
    - **untagged** — files with no index entry
    - **changed** — edited since tagged (hash differs); **unstamped** is the subset tagged before change tracking existed
    - **unorganized** — entries whose wiki pages are missing or built from an older version
    - **removed** — entries whose source file is gone
    - **ignored** — `ignore: true` frontmatter, never processed
-4. If **unstamped** is non-empty: in `auto` mode, baseline them. Otherwise ask once: re-tag those N entries (a Haiku pass each) or baseline them as current. Baseline = `mark_sources` with `stage: "baseline"`, then `git -C "<wiki>" add sources/index.md && git -C "<wiki>" commit -m "wiki: baseline source hashes"`, then `source_status` again.
+4. If **unstamped** is non-empty: in `auto` mode, baseline them. Otherwise ask once: re-tag those N entries (a Haiku pass each) or baseline them as current. Baseline = `mark_sources` with `stage: "baseline"`, then `commit_files` with `["sources/index.md"]` and message `wiki: baseline source hashes`, then `source_status` again.
 5. If untagged, changed, unorganized and removed are all empty: say "Nothing new to process — wiki is up to date." and stop.
 6. Report: `Found X new, Y changed, Z removed source(s); W to organize.`
 
@@ -42,11 +42,12 @@ Invoke `llm-wiki:wiki-tagger` with `<wiki>` and two labeled lists, **New files**
 
 ## Phase 4 — Commit and report
 
-One commit for the tag + organize work:
+One commit for the tag + organize work: `commit_files` with message `wiki: process batch [YYYY-MM-DD]` and these `files`:
 
-```bash
-git -C "<wiki>" add -A -- sources wiki ':(glob)*.md' && git -C "<wiki>" commit -m "wiki: process batch [YYYY-MM-DD]"
-```
+- `sources/<file>` for every **untagged**, **changed** and **removed** file from Phase 1 (the source versions this batch processed, and removals)
+- `sources/index.md`, `wiki/` (pipeline-owned: every change under it), `log.md`, `backlinks.md`
+
+Never `git add -A` or `git add .`: other sessions may have edits in progress in the wiki, and `commit_files` takes only these paths.
 
 If `git.auto_push` is true and a remote is configured: `git -C "<wiki>" push`.
 

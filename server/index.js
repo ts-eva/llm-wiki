@@ -8,13 +8,13 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import fs from "fs";
 import path from "path";
-import { execFileSync } from "child_process";
-import { sourceFilename } from "./source-filename.js";
+import { saveSource } from "./save-source.js";
+import { commitFiles } from "./git-commit.js";
 import { sourceStatus, markSources, getSourceEntries, writeSourceEntry, setWikiPages } from "./sources-state.js";
 import { prepareSources } from "./prepare-sources.js";
 import { searchWiki } from "./search.js";
 import { wikiStats, getRecent, findUnlinkedMentions, renameTag, appendLog, removePage } from "./maintenance.js";
-import { readDateFormat, formatDate } from "./dates.js";
+import { readDateFormat } from "./dates.js";
 import matter from "gray-matter";
 
 const WIKI_PATH = process.env.WIKI_PATH
@@ -55,8 +55,6 @@ function readRootFile(name) {
   return fs.readFileSync(filePath, "utf8");
 }
 
-const todayFormatted = () => formatDate(new Date(), readDateFormat(WIKI_PATH));
-
 // --- Tool handlers ---
 
 function getPage({ slug }) {
@@ -96,49 +94,6 @@ function listTags() {
     if (match) tags.push({ tag: match[1], description: match[2].trim() });
   }
   return { count: tags.length, tags };
-}
-
-function saveSource({ content, title, source_url, type }) {
-  if (!content) return { error: "content is required" };
-
-  const sourcesDir = path.join(WIKI_PATH, "sources");
-  fs.mkdirSync(sourcesDir, { recursive: true });
-  // A given title always means the same note: update it rather than create "name (2).md".
-  const filename = sourceFilename(title || content.split("\n").find((l) => l.trim()), sourcesDir, { update: Boolean(title) });
-  const filePath = path.join(sourcesDir, filename);
-  const existed = fs.existsSync(filePath);
-
-  // Keep the original created date and any other frontmatter (e.g. ignore: true) on update.
-  const managed = new Set(["created", "updated", "title", "source_url", ...(type ? ["type"] : [])]);
-  let created = todayFormatted();
-  const kept = [];
-  if (existed) {
-    const fm = fs.readFileSync(filePath, "utf8").match(/^---\n([\s\S]*?)\n---/);
-    let skipping = false;
-    for (const line of fm ? fm[1].split("\n") : []) {
-      const key = line.match(/^([A-Za-z0-9_-]+):/)?.[1];
-      if (key) skipping = managed.has(key);
-      if (key === "created") created = line.slice(line.indexOf(":") + 1).trim().replace(/^["']|["']$/g, "");
-      if (!skipping) kept.push(line);
-    }
-  }
-
-  const frontmatter = ["---", `created: ${created}`];
-  if (existed) frontmatter.push(`updated: ${todayFormatted()}`);
-  if (type) frontmatter.push(`type: ${type}`);
-  if (title) frontmatter.push(`title: ${JSON.stringify(title)}`);
-  if (source_url) frontmatter.push(`source_url: ${JSON.stringify(source_url)}`);
-  frontmatter.push(...kept, "---", "");
-
-  fs.writeFileSync(filePath, frontmatter.join("\n") + "\n" + content, "utf8");
-
-  try {
-    // execFileSync, not a shell string: titles contain spaces, quotes, $, etc.
-    execFileSync("git", ["-C", WIKI_PATH, "add", `sources/${filename}`], { stdio: "pipe" });
-    execFileSync("git", ["-C", WIKI_PATH, "commit", "-m", `wiki: ${existed ? "update" : "add"} source ${filename}`], { stdio: "pipe" });
-  } catch { /* git may not be configured in all environments */ }
-
-  return { saved: true, updated: existed, file: `sources/${filename}`, message: "Run /llm-wiki:wiki-process when ready to tag and organize." };
 }
 
 function getBacklinks({ source_file }) {
@@ -245,7 +200,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "save_source",
-      description: "Capture a note into sources/ (the one write path; /llm-wiki:wiki-add and /llm-wiki:wiki-session call this). Applies the naming rules, writes created:/updated: frontmatter, commits. Searchable immediately via search_wiki; /llm-wiki:wiki-process organizes it into pages later. Pass content WITHOUT frontmatter. If a source with the same title already exists, it is updated in place (content replaced, created date and other frontmatter kept) — read the existing file first and pass the full merged content.",
+      description: "Capture a note into sources/ (the one write path; /llm-wiki:wiki-add and /llm-wiki:wiki-session call this). Applies the naming rules, writes created:/updated: frontmatter, commits. Searchable immediately via search_wiki; /llm-wiki:wiki-process organizes it into pages later. Pass content WITHOUT frontmatter. If a source with the same title already exists, it is updated in place (content replaced, created date and other frontmatter kept) — read the existing file first and pass the full merged content. A NEW title close to existing notes is refused (saved: false) with the similar titles: merge into one of them, or call again with new: true if it is a different topic.",
       inputSchema: {
         type: "object",
         properties: {
@@ -253,6 +208,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           title: { type: "string", description: "Optional title — becomes the filename as-is, lowercased, spaces kept (e.g. \"payments architecture review.md\"). Same title = same note: updates the existing file" },
           source_url: { type: "string", description: "Optional URL the content came from" },
           type: { type: "string", description: "Optional note type for frontmatter, e.g. conversation, article, meeting-notes" },
+          new: { type: "boolean", description: "Confirm a new note after a similar-notes refusal (default false)" },
         },
         required: ["content"],
       },
@@ -264,7 +220,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "prepare_sources",
-      description: "Pipeline-only, first step of /wiki-process: stamp a created: date on every note in sources/ missing one, and rename untagged notes that break the naming rules (relinking [[wikilinks]]). Run before source_status.",
+      description: "Pipeline-only, first step of /wiki-process: stamp a created: date on every note in sources/ missing one, and rename untagged notes that break the naming rules (relinking [[wikilinks]]). Run before source_status. `files` lists every path it changed: commit those with commit_files.",
       inputSchema: { type: "object", properties: {} },
     },
     {
@@ -343,6 +299,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "commit_files",
+      description: "Commit exactly these wiki paths (git commit --only), never `git add -A`: other sessions may have edits in progress and the user may have staged files. Unchanged paths are skipped; nothing changed = no commit. A path ending in / means every change under that folder (pipeline-owned folders only, e.g. wiki/). Retries while another session holds the git lock.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          files: { type: "array", items: { type: "string" }, description: "Wiki-relative paths, e.g. \"sources/index.md\", \"sources/my note.md\", \"wiki/\"" },
+          message: { type: "string", description: "Commit message" },
+        },
+        required: ["files", "message"],
+      },
+    },
+    {
       name: "mark_sources",
       description: "Pipeline-only: stamp sources/index.md entries after a pipeline step. stage 'tagged' after wiki-tagger wrote/replaced entries; 'organized' after wiki-curator updated their pages; 'remove' drops entries whose source file was deleted; 'baseline' one-time stamp for entries tagged before change tracking.",
       inputSchema: {
@@ -367,7 +335,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   else if (name === "list_tags") result = listTags();
   else if (name === "get_backlinks") result = getBacklinks(args);
   else if (name === "get_recent") result = getRecent(WIKI_PATH, args);
-  else if (name === "save_source") result = saveSource(args);
+  else if (name === "save_source") result = saveSource(WIKI_PATH, args);
   else if (name === "prepare_sources") result = { wiki: WIKI_PATH, ...prepareSources(WIKI_PATH, readDateFormat(WIKI_PATH)) };
   else if (name === "get_source_entries") result = getSourceEntries(WIKI_PATH, args.files || []);
   else if (name === "write_source_entry") result = writeSourceEntry(WIKI_PATH, args.file, args.entry || "");
@@ -378,6 +346,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   else if (name === "find_unlinked_mentions") result = findUnlinkedMentions(WIKI_PATH);
   else if (name === "rename_tag") result = renameTag(WIKI_PATH, args.from, args.to);
   else if (name === "source_status") result = { wiki: WIKI_PATH, ...sourceStatus(WIKI_PATH) };
+  else if (name === "commit_files") {
+    try { result = commitFiles(WIKI_PATH, args.files, args.message); } catch (e) { result = { error: String(e.stderr || e.message).trim() }; }
+  }
   else if (name === "mark_sources") result = markSources(WIKI_PATH, args.files || [], args.stage);
   else result = { error: `Unknown tool: ${name}` };
 

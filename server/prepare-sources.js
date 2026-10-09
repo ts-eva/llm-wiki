@@ -73,7 +73,8 @@ export function readableTitle(file) {
   return base;
 }
 
-function relink(wikiPath, from, to) {
+// Rewrites [[from]] links to [[to]]; adds each file it changed (wiki-relative) to `files`.
+function relink(wikiPath, from, to, files) {
   const esc = from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const re = new RegExp(`\\[\\[(sources/)?${esc}(\\.md)?(?=[\\]|#])`, "gi");
   let count = 0;
@@ -86,7 +87,7 @@ function relink(wikiPath, from, to) {
         else if (e.name.endsWith(".md")) {
           const text = fs.readFileSync(p, "utf8");
           const next = text.replace(re, (_, pre = "", ext = "") => { count++; return `[[${pre}${to}${ext}`; });
-          if (next !== text) fs.writeFileSync(p, next, "utf8");
+          if (next !== text) { fs.writeFileSync(p, next, "utf8"); files.add(path.relative(wikiPath, p)); }
         }
       }
     };
@@ -108,7 +109,8 @@ function moveFile(wikiPath, from, to) {
 export function renameUntagged(wikiPath) {
   const dir = path.join(wikiPath, "sources");
   const renamed = [];
-  if (!fs.existsSync(dir)) return { renamed, relinked: 0 };
+  const relinkedFiles = new Set();
+  if (!fs.existsSync(dir)) return { renamed, relinked: 0, relinkedFiles: [] };
   const indexPath = path.join(dir, "index.md");
   const tagged = new Set(parseIndex(fs.existsSync(indexPath) ? fs.readFileSync(indexPath, "utf8") : "").sections.map((s) => s.file));
   let relinked = 0;
@@ -119,12 +121,21 @@ export function renameUntagged(wikiPath) {
     const to = sourceFilename(readableTitle(f), dir, { ignore: f });
     if (to === f || to === "untitled.md") continue;
     moveFile(wikiPath, f, to);
-    relinked += relink(wikiPath, f.replace(/\.md$/, ""), to.replace(/\.md$/, ""));
+    relinked += relink(wikiPath, f.replace(/\.md$/, ""), to.replace(/\.md$/, ""), relinkedFiles);
     renamed.push({ from: f, to });
   }
-  return { renamed, relinked };
+  return { renamed, relinked, relinkedFiles: [...relinkedFiles].sort() };
 }
 
+// `files`: every path this step changed, for the caller to commit (commit_files) and nothing else.
 export function prepareSources(wikiPath, fmt) {
-  return { ...stampCreated(wikiPath, fmt), ...renameUntagged(wikiPath) };
+  const { stamped } = stampCreated(wikiPath, fmt);
+  const { renamed, relinked, relinkedFiles } = renameUntagged(wikiPath);
+  // Both names of a rename: the commit needs the old one's removal and the new one's addition.
+  const files = new Set([
+    ...stamped.map((s) => `sources/${s.file}`),
+    ...renamed.flatMap((r) => [`sources/${r.from}`, `sources/${r.to}`]),
+    ...relinkedFiles,
+  ]);
+  return { stamped, renamed, relinked, files: [...files].sort() };
 }

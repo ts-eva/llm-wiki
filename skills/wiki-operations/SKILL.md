@@ -126,14 +126,11 @@ When updating a page:
 2. Update `wiki/index.md` if the summary changed
 3. Append to `log.md` (root): `## [YYYY-MM-DD] update | Title`
 4. Update `wiki/tags.md` and `backlinks.md` (root) if tags or sources changed
-5. Commit: `git add . && git commit -m "wiki: update <title>"`
+5. Commit only the files you changed: `commit_files` with those paths (or leave it to the session-end commit)
 
 ## Session end
 
-Before the session ends:
-1. Check for any uncommitted changes: `git status`
-2. If there are uncommitted changes: `git add . && git commit -m "wiki: <brief summary of session changes>"`
-3. If `git.auto_push` is true and a remote is configured: `git push`
+The `SessionEnd` hook commits the wiki files this session wrote with Write/Edit (`git.auto_commit`, default on), and pushes if `git.auto_push`. Never `git add .` / `git add -A` the wiki: other sessions may have edits in progress there. Files changed through Bash aren't tracked by the hook; commit those yourself with `commit_files`.
 
 ## Scope guard
 

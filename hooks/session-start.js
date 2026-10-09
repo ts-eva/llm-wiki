@@ -12,22 +12,10 @@
  */
 import fs from "fs";
 import path from "path";
-import os from "os";
 import { frontmatterDates, readDateFormat } from "../server/dates.js";
+import { resolveWikiPath } from "../server/wiki-path.js";
 
 const RECENT_LIMIT = 8;
-
-function resolveWikiPath() {
-  if (process.env.WIKI_PATH) {
-    return path.resolve(process.env.WIKI_PATH.replace(/^~/, os.homedir()));
-  }
-  try {
-    const cfg = JSON.parse(fs.readFileSync(path.join(os.homedir(), ".claude.json"), "utf8"));
-    const p = cfg?.mcpServers?.["llm-wiki"]?.env?.WIKI_PATH;
-    if (p) return path.resolve(p.replace(/^~/, os.homedir()));
-  } catch {}
-  return path.join(os.homedir(), "wiki");
-}
 
 // Newest by frontmatter updated:/created:, not mtime: pipeline steps (created: backfill,
 // renames) touch many files at once and would flood the list with old notes.

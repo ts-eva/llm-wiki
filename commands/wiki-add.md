@@ -14,6 +14,7 @@ If $ARGUMENTS is empty, ask the user: "What would you like to add? (paste text, 
 
 - Pass `content` without frontmatter; `save_source` writes `created:` (and `updated:` on an existing title), applies the naming rules, and commits.
 - Same title = same note. To add to an existing note, read `sources/<title>.md` first and pass the full merged content.
+- `saved: false` with `similar`: notes on a close topic exist. Show them and ask: add to one of them (read it, merge, save under its title) or keep it separate (`save_source` again with `new: true`).
 - Title: readable, specific (`smart match widget background refresh on android`), no date, no `session-` prefix.
 
 Tell the user: "Saved to <file>. Searchable now; organized into pages on the next /llm-wiki:wiki-process."

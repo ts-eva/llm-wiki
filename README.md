@@ -85,15 +85,16 @@ daily job (/llm-wiki:wiki-schedule)          ← processes new notes; free on id
 | `get_page(slug)` | Fetch a page by slug |
 | `list_pages(type?, tag?, include_sensitive?)` | List pages, filterable |
 | `list_tags()` | Canonical tag list |
-| `save_source(content, title?, source_url?, type?)` | **The** write path into sources/ — `/llm-wiki:wiki-add` and `/llm-wiki:wiki-session` call it. Applies the naming rules, writes `created:`/`updated:`, commits; same title updates the note |
+| `save_source(content, title?, source_url?, type?, new?)` | **The** write path into sources/ — `/llm-wiki:wiki-add` and `/llm-wiki:wiki-session` call it. Applies the naming rules, writes `created:`/`updated:`, commits; same title updates the note. A new title close to an existing note is refused with the similar titles (merge, or `new: true`) |
 | `get_recent(days? \| since?, until?)` | log.md entries plus sources created/updated in the window, processed or not |
 | `get_backlinks(source_file)` | Pages referencing a source file |
 | `wiki_stats()` | Dashboard numbers |
 | `find_unlinked_mentions()` | Page titles mentioned in prose but not linked |
 | `rename_tag(from, to)` | Rename/merge a tag in page frontmatter, index entries, tags.md |
 | `source_status()` | Pipeline state of sources/ (untagged, changed, unorganized, removed, ignored) plus `wiki`, the path the server serves |
-| `prepare_sources()` | Pipeline: backfill `created:`, rename untagged notes to the naming rules, relink `[[wikilinks]]` |
+| `prepare_sources()` | Pipeline: backfill `created:`, rename untagged notes to the naming rules, relink `[[wikilinks]]`; returns `files`, the paths it changed |
 | `get_source_entries(files)` / `write_source_entry(file, entry)` / `set_wiki_pages(file, pages)` | Pipeline: read/write single `sources/index.md` entries, so no agent loads the whole (large) file |
+| `commit_files(files, message)` | Commit exactly these paths (a trailing `/` = every change under that folder), never `git add -A`. Built in a temporary index under a lock, so your staged files and other sessions' edits stay out, and case-only renames work on macOS |
 | `mark_sources(files, stage)` | Pipeline: stamp entries organized / baseline / remove |
 | `append_log(entries)` / `remove_page(slug)` | Pipeline: log.md append without reading it; delete an orphaned page and its index line |
 
@@ -138,7 +139,7 @@ wiki:
   date_format: "MM/DD/YYYY"   # date display — YYYY-MM-DD for ISO, DD/MM/YYYY for European
 
 git:
-  auto_commit: true    # commit before session ends
+  auto_commit: true    # at session end, commit the wiki files that session edited
   auto_push: false     # push after commit (requires remote)
   auto_pull: false     # pull at session start (requires remote)
 
@@ -160,7 +161,7 @@ mcp:
 2. **Detect** — `source_status` hashes every source against its entry: new, changed, unorganized, removed. Headers inside the index's `<!-- -->` format comment are ignored.
 3. **Tag** — wiki-tagger (Haiku), batches of 25.
 4. **Organize** — wiki-curator (Sonnet).
-5. **Commit once** — `git add -A -- sources wiki ':(glob)*.md'`; push only if `git.auto_push`.
+5. **Commit once** — `commit_files` with the sources this batch processed, `sources/index.md`, `wiki/`, `log.md` and `backlinks.md`; push only if `git.auto_push`. Never `git add -A`: other sessions' in-progress edits and anything you staged stay out of pipeline commits.
 
 The wiki path comes from the server (`wiki` in `source_status`), never from the current directory or CLAUDE.md, so running it from any project folder is safe.
 
@@ -177,6 +178,16 @@ Adds a crontab line (tagged `# llm-wiki-process`) running `scripts/nightly-proce
 - **Auth under cron**: `claude -p` can't read the login keychain from cron and needs `HOME`/`USER`/`LOGNAME`/`TMPDIR`. The script sets those and reads a `claude setup-token` token from `LLM_WIKI_TOKEN_FILE` (default `~/.claude/.oauth-token`, `chmod 600`). Set `LLM_WIKI_TOKEN_FILE` when running install to bake a different path into the cron line.
 - **Overlap**: a mkdir lock skips a run if the previous one is still going.
 - Log: `~/.claude/llm-wiki-process.log`. Remove with `/llm-wiki:wiki-schedule uninstall`.
+
+## Session-end commit
+
+With `git.auto_commit: true` (the default), the `SessionEnd` hook commits the wiki files the ending session edited, in the background so exit stays fast:
+
+- **Only its own files**: the paths its Write/Edit calls (subagents included) pointed at inside the wiki, committed with `commit_files`. Edits another session has in progress, and anything you staged, are left alone, so several sessions can run at once.
+- Nothing changed: no commit. `save_source` and `/llm-wiki:wiki-process` commit their own work, so they're already clean by then.
+- Files changed through Bash aren't tracked; commit those by path.
+- Pushes after the commit when `git.auto_push` is true and a remote exists.
+- Log (commits and errors only): `~/.claude/llm-wiki-commit.log`.
 
 ## Obsidian support
 

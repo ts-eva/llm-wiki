@@ -4,7 +4,8 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { execFileSync } from "child_process";
-import { stampCreated, renameUntagged, readableTitle } from "./prepare-sources.js";
+import { stampCreated, renameUntagged, readableTitle, prepareSources } from "./prepare-sources.js";
+import { commitFiles } from "./git-commit.js";
 
 function wiki({ git }) {
   const w = fs.mkdtempSync(path.join(os.tmpdir(), "llm-wiki-stamp-"));
@@ -82,4 +83,45 @@ test("case-only rename of a tracked note is recorded in git", () => {
   execFileSync("git", ["-C", w, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "w"]);
   renameUntagged(w);
   assert.match(execFileSync("git", ["-C", w, "status", "--short"]).toString(), /R {2}sources\/Weekly\.md -> sources\/weekly\.md/);
+});
+
+test("prepareSources lists every file it changed; commitFiles commits those and nothing else", () => {
+  const w = wiki({ git: true });
+  const src = path.join(w, "sources");
+  const git = (...a) => execFileSync("git", ["-C", w, "-c", "user.name=t", "-c", "user.email=t@t", ...a]).toString();
+  fs.writeFileSync(path.join(src, "Weekly.md"), "---\ncreated: 01/01/2026\n---\nx");
+  fs.writeFileSync(path.join(src, "linker.md"), "---\ncreated: 01/01/2026\n---\nsee [[Weekly]]");
+  fs.writeFileSync(path.join(src, "busy.md"), "---\ncreated: 01/01/2026\n---\nv1");
+  git("add", "."); git("commit", "-qm", "w");
+  fs.writeFileSync(path.join(src, "fresh.md"), "no date yet");
+  fs.writeFileSync(path.join(src, "busy.md"), "---\ncreated: 01/01/2026\n---\nhalf-done edit by another session");
+  fs.writeFileSync(path.join(w, "staged by user.md"), "s");
+  git("add", "staged by user.md");
+
+  const { files } = prepareSources(w, "MM/DD/YYYY");
+  // fm, plain, skip: the fixture's notes without created:
+  const expected = ["sources/Weekly.md", "sources/fm.md", "sources/fresh.md", "sources/linker.md", "sources/plain.md", "sources/skip.md", "sources/weekly.md"];
+  assert.deepEqual(files, expected);
+  assert.deepEqual(commitFiles(w, files, "wiki: prepare sources").committed, expected);
+  assert.equal(git("show", "--name-status", "--format=", "HEAD").trim(),
+    "M\tsources/fm.md\nA\tsources/fresh.md\nM\tsources/linker.md\nM\tsources/plain.md\nM\tsources/skip.md\nR100\tsources/Weekly.md\tsources/weekly.md");
+  assert.deepEqual(git("status", "--porcelain", "-z").split("\0").filter(Boolean).sort(), [" M sources/busy.md", "A  staged by user.md"]);
+  assert.deepEqual(commitFiles(w, files, "again").committed, []);
+});
+
+test("commitFiles: a folder entry takes every change under it, deletions included", () => {
+  const w = wiki({ git: true });
+  const git = (...a) => execFileSync("git", ["-C", w, "-c", "user.name=t", "-c", "user.email=t@t", ...a]).toString();
+  fs.mkdirSync(path.join(w, "wiki", "pages"), { recursive: true });
+  fs.writeFileSync(path.join(w, "wiki", "pages", "old.md"), "o");
+  fs.writeFileSync(path.join(w, "log.md"), "l");
+  git("add", "."); git("commit", "-qm", "w");
+  fs.unlinkSync(path.join(w, "wiki", "pages", "old.md"));
+  fs.writeFileSync(path.join(w, "wiki", "pages", "new page.md"), "n");
+  fs.writeFileSync(path.join(w, "log.md"), "l2");
+  fs.writeFileSync(path.join(w, "sources", "untouched.md"), "u");
+  const res = commitFiles(w, ["wiki/", "log.md"], (f) => `wiki: batch (${f.length})`);
+  assert.deepEqual(res.committed, ["log.md", "wiki/pages/new page.md", "wiki/pages/old.md"]);
+  assert.equal(git("log", "-1", "--format=%s").trim(), "wiki: batch (3)");
+  assert.equal(git("status", "--porcelain").trim(), "?? sources/untouched.md");
 });

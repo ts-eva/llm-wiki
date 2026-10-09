@@ -7,5 +7,5 @@ Prefer the daily job (`/llm-wiki:wiki-schedule`), which runs the full `/llm-wiki
 1. Call `source_status` (its `wiki` field is `<wiki>`). Work = **untagged** + **changed**, excluding **unstamped** (`/llm-wiki:wiki-process` handles those).
 2. No work: exit with no output.
 3. Invoke `llm-wiki:wiki-tagger` with `<wiki>`, **New files** and **Changed files** (batches of 25). `write_source_entry` stamps each entry as written.
-4. Commit: `git -C "<wiki>" add sources/index.md wiki/tags.md && git commit -m "wiki: autotag <N> source(s) [YYYY-MM-DD]"`.
+4. Commit: `commit_files` with `sources/index.md`, `wiki/tags.md` and `sources/<file>` for each file tagged, message `wiki: autotag <N> source(s) [YYYY-MM-DD]`.
 5. Report: "Tagged N new, re-tagged M: file1, file2, …"
